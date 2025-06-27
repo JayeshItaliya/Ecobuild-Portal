@@ -29,3 +29,10 @@ class UserRoleChoices(BaseStatusChoices):
     ADMIN = "admin", "Admin"
     USER = "user", "User"
     GUEST = "guest", "Guest"
+
+
+class VerificationStatusChoices(BaseStatusChoices):
+    PENDING = "Pending", "Pending"
+    ACCEPTED = "Accepted", "Accepted"
+    REJECTED = "Rejected", "Rejected"
+
