@@ -31,6 +31,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "qwertyuiop1234asdfghjk56789xcvbnjmk")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+AUTH_USER_MODEL = "accounts.User"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 

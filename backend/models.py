@@ -1,9 +1,9 @@
 import uuid
 
 from django.db import models
-from backend import settings
 from django.utils import timezone
 
+from backend import settings
 from backend.manager import SoftDeletionManager
 
 
@@ -93,26 +93,28 @@ class SoftDeleteBaseModel(models.Model):
                     else:
                         obj.delete()
         super().delete()
-        
+
+
 class BaseModel(SoftDeleteBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     created_by = models.ForeignKey(
-        "accounts.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="%(class)s_created_by",
     )
     updated_by = models.ForeignKey(
-        "accounts.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="%(class)s_updated_by",
     )
     objects = SoftDeletionManager()
+
     class Meta:
         abstract = True

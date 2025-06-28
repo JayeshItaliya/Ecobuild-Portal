@@ -17,6 +17,7 @@ class UserTypeChoices(BaseStatusChoices):
     DEALER = "dealer", "Dealer"
     DEVELOPER = "developer", "Developer"
     HOMEOWNER = "homeowner", "Homeowner"
+    OTHER = "other", "Other"
 
 
 class LoginMethodChoices(BaseStatusChoices):
@@ -32,7 +33,6 @@ class UserRoleChoices(BaseStatusChoices):
 
 
 class VerificationStatusChoices(BaseStatusChoices):
-    PENDING = "Pending", "Pending"
-    ACCEPTED = "Accepted", "Accepted"
-    REJECTED = "Rejected", "Rejected"
-
+    PENDING = "pending", "Pending"
+    ACCEPTED = "accepted", "Accepted"
+    REJECTED = "rejected", "Rejected"
