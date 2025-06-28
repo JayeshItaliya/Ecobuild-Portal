@@ -54,7 +54,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
 ]
 
-INHOUSE_APPS = ["account"]
+INHOUSE_APPS = ["accounts"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 
@@ -66,7 +66,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = "backend.urls"
 
@@ -135,14 +139,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+LANGUAGES = [
+    ("en", "English"),
+    ("he", "Hebrew"),
+    ("ru", "Russian"),
+    ("ar", "Arabic"),
+]
 
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
+TIME_ZONE = "UTC"
+
+LOCALE_PATHS = [BASE_DIR / "locale"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

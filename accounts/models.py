@@ -9,6 +9,15 @@ from backend.enums import VerificationStatusChoices
 from backend.models import BaseModel
 
 
+class language(BaseModel):
+    name = models.CharField(max_length=50)
+    code = models.CharField(max_length=50)
+    note = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class User(AbstractUser, BaseModel):
     email = models.EmailField(
         verbose_name="Email Address",
@@ -69,15 +78,6 @@ class Role(BaseModel):
         db_table = "roles"
         verbose_name = "Role"
         verbose_name_plural = "Roles"
-
-
-class language(BaseModel):
-    name = models.CharField(max_length=50)
-    code = models.CharField(max_length=50)
-    note = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Professional(BaseModel):
