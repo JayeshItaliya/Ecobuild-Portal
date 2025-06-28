@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from backend import settings
 from backend.enums import LoginMethodChoices
 from backend.enums import UserRoleChoices
 from backend.enums import UserTypeChoices
@@ -145,3 +146,117 @@ class UsageLog(BaseModel):
 
     class Meta:
         db_table = "usage_log"
+
+
+class Country(BaseModel):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "mst_country"
+
+
+class ContentType(BaseModel):
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "content_type"
+
+
+class Content(BaseModel):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    slug = models.SlugField(max_length=255, unique=True)
+    status = models.CharField(max_length=50)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    publish_date = models.DateTimeField(null=True, blank=True)
+    expire_date = models.DateTimeField(null=True, blank=True)
+    meta_title = models.CharField(max_length=255, null=True, blank=True)
+    meta_tag = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = "content"
+
+
+class Module(BaseModel):
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "mst_module"
+
+
+class Course(BaseModel):
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    thumbnail = models.ImageField(
+        upload_to="courses/thumbnails/", null=True, blank=True
+    )
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = "course"
+
+
+class ProductCategory(BaseModel):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "product_category"
+
+
+class Product(BaseModel):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
+    image = models.ImageField(upload_to="products/", null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "product"
+
+
+class Document(BaseModel):
+    name = models.CharField(max_length=255)
+    file = models.FileField(upload_to="documents/")
+    file_type = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "document"
+
+
+class DocumentAccess(BaseModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    access_level = models.CharField(max_length=50)  # e.g., read-only, downloadable
+
+    def __str__(self):
+        return f"{self.user.email} - {self.document.name}"
+
+    class Meta:
+        db_table = "document_access"
+        unique_together = ("user", "document")
