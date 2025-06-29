@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.contrib.auth.models import AbstractBaseUser
 from backend import settings
 from backend.enums import LoginMethodChoices
 from backend.enums import UserRoleChoices
@@ -18,7 +18,8 @@ class language(BaseModel):
         return self.name
 
 
-class User(AbstractUser, BaseModel):
+class User(AbstractBaseUser, BaseModel):
+    # TODO:WHat is a value of status in user_access_control
     email = models.EmailField(
         verbose_name="Email Address",
         max_length=255,
@@ -41,6 +42,7 @@ class User(AbstractUser, BaseModel):
         default=LoginMethodChoices.EMAIL,
     )
     is_active = models.BooleanField(default=True)
+    # TODO: change the profile_image to a FileField
     profile_image = models.URLField(null=True, blank=True)
     verification_status = models.CharField(
         max_length=20,
@@ -60,11 +62,11 @@ class User(AbstractUser, BaseModel):
         blank=True,
     )
 
-    REQUIRED_FIELDS = ["email"]
-    USERNAME_FIELD = "username"  # Can change to 'email' if you want email login
+    REQUIRED_FIELDS = []
+    USERNAME_FIELD = "email"  # Can change to 'email' if you want email login
 
     def __str__(self):
-        return self.username
+        return self.email
 
 
 class Role(BaseModel):
@@ -130,10 +132,13 @@ class Region(BaseModel):
 
 
 class ActivityLog(BaseModel):
-    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True)
-    module_id = models.IntegerField()
+    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
+    module_id = models.ForeignKey(
+        "Module", on_delete=models.SET_NULL, null=True, blank=True
+    )
     action = models.CharField(max_length=100)
     details = models.TextField(null=True, blank=True)
+    time_stamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "activity_log"
@@ -151,6 +156,9 @@ class UsageLog(BaseModel):
 class Country(BaseModel):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=10)
+    flag = models.ImageField(upload_to="flags/", null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -191,6 +199,7 @@ class Content(BaseModel):
 class Module(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -241,6 +250,8 @@ class Document(BaseModel):
     name = models.CharField(max_length=255)
     file = models.FileField(upload_to="documents/")
     file_type = models.CharField(max_length=50)
+    category = models.CharField(max_length=50)
+    file_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -260,3 +271,29 @@ class DocumentAccess(BaseModel):
     class Meta:
         db_table = "document_access"
         unique_together = ("user", "document")
+
+
+class lead(BaseModel):
+    # What is a status value in lead
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
+    score = models.IntegerField()
+    status = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class conteact(BaseModel):
+    lead = models.ForeignKey(lead, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    job_title = models.TextField()
+
+    def __str__(self):
+        return self.name
