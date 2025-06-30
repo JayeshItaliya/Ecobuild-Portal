@@ -1,7 +1,7 @@
-from django.db import models
+from accounts.manager import CustomUserManager
 
 
-class SoftDeletionManager(models.Manager):
+class SoftDeletionManager(CustomUserManager):
     def all_with_deleted(self):
         return super().get_queryset()
 

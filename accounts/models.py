@@ -1,6 +1,6 @@
-from django.contrib.auth.models import AbstractUser
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
+from django.db import models
+
 from backend import settings
 from backend.enums import LoginMethodChoices
 from backend.enums import UserRoleChoices
@@ -61,12 +61,23 @@ class User(AbstractBaseUser, BaseModel):
         null=True,
         blank=True,
     )
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(
+        default=False
+    )  # ✅ Required for permission checks
 
     REQUIRED_FIELDS = []
     USERNAME_FIELD = "email"  # Can change to 'email' if you want email login
 
     def __str__(self):
         return self.email
+
+    def has_module_perms(self, app_label):
+        return self.is_staff
+
+    def has_perm(self, perm, obj=None):
+        return self.is_superuser
 
 
 class Role(BaseModel):
