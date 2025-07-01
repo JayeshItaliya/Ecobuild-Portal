@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
+from django.db.models import JSONField
 
 from backend import settings
 from backend.enums import LoginMethodChoices
@@ -9,7 +10,7 @@ from backend.enums import VerificationStatusChoices
 from backend.models import BaseModel
 
 
-class language(BaseModel):
+class Language(BaseModel):
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=50)
     note = models.TextField(null=True, blank=True)
@@ -20,12 +21,7 @@ class language(BaseModel):
 
 class User(AbstractBaseUser, BaseModel):
     # TODO:WHat is a value of status in user_access_control
-    email = models.EmailField(
-        verbose_name="Email Address",
-        max_length=255,
-        unique=True,
-        db_index=True,
-    )
+    email = models.EmailField(max_length=255, unique=True, db_index=True)
     role = models.CharField(
         max_length=50, choices=UserRoleChoices.choices, default=UserRoleChoices.USER
     )
@@ -41,7 +37,6 @@ class User(AbstractBaseUser, BaseModel):
         choices=LoginMethodChoices.choices,
         default=LoginMethodChoices.EMAIL,
     )
-    is_active = models.BooleanField(default=True)
     # TODO: change the profile_image to a FileField
     profile_image = models.URLField(null=True, blank=True)
     verification_status = models.CharField(
@@ -51,24 +46,15 @@ class User(AbstractBaseUser, BaseModel):
         db_index=True,
     )
     language = models.ForeignKey(
-        language,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        Language, on_delete=models.SET_NULL, null=True, blank=True
     )
-    organization = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-    )
+    organization = models.CharField(max_length=50, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(
-        default=False
-    )  # ✅ Required for permission checks
+    is_superuser = models.BooleanField(default=False)
 
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
-    USERNAME_FIELD = "email"  # Can change to 'email' if you want email login
 
     def __str__(self):
         return self.email
@@ -81,11 +67,11 @@ class User(AbstractBaseUser, BaseModel):
 
 
 class Role(BaseModel):
-    name = models.CharField(max_length=50)
-    description = models.TextField(null=True, blank=True)
+    name = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Role")
 
     class Meta:
         db_table = "roles"
@@ -105,11 +91,11 @@ class Professional(BaseModel):
         "Company", on_delete=models.SET_NULL, null=True, blank=True
     )
     role = models.ForeignKey("Role", on_delete=models.SET_NULL, null=True, blank=True)
-    profile_summary = models.TextField(null=True, blank=True)
+    profile_summary = JSONField(null=True, blank=True)
     region = models.ForeignKey(
         "Region", on_delete=models.SET_NULL, null=True, blank=True
     )
-    specializations = models.TextField(null=True, blank=True)
+    specializations = JSONField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -119,27 +105,149 @@ class Professional(BaseModel):
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=255)
-    industry_type = models.CharField(max_length=255, null=True, blank=True)
+    name = JSONField(default=dict)
+    industry_type = JSONField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Company")
 
     class Meta:
         db_table = "mst_company"
 
 
 class Region(BaseModel):
-    name = models.CharField(max_length=50)
+    name = JSONField(default=dict)
     country = models.ForeignKey("Country", on_delete=models.SET_NULL, null=True)
     code = models.CharField(max_length=10, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Region")
 
     class Meta:
         db_table = "mst_region"
+
+
+class Country(BaseModel):
+    name = JSONField(default=dict)
+    code = models.CharField(max_length=10)
+    flag = models.ImageField(upload_to="flags/", null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    notes = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Country")
+
+    class Meta:
+        db_table = "mst_country"
+
+
+class Module(BaseModel):
+    name = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Module")
+
+    class Meta:
+        db_table = "mst_module"
+
+
+class Course(BaseModel):
+    title = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
+    thumbnail = models.ImageField(
+        upload_to="courses/thumbnails/", null=True, blank=True
+    )
+
+    def __str__(self):
+        return self.title.get("en", "Untitled Course")
+
+    class Meta:
+        db_table = "course"
+
+
+class ProductCategory(BaseModel):
+    name = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Category")
+
+    class Meta:
+        db_table = "product_category"
+
+
+class Product(BaseModel):
+    name = JSONField(default=dict)
+    description = JSONField(default=dict)
+    category = models.ForeignKey(
+        "ProductCategory", on_delete=models.SET_NULL, null=True
+    )
+    image = models.ImageField(upload_to="products/", null=True, blank=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Product")
+
+    class Meta:
+        db_table = "product"
+
+
+class ContentType(BaseModel):
+    name = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Type")
+
+    class Meta:
+        db_table = "content_type"
+
+
+class Content(BaseModel):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    slug = models.SlugField(max_length=255, unique=True)
+    status = models.CharField(max_length=50)
+    title = JSONField(default=dict)
+    body = JSONField(default=dict)
+    publish_date = models.DateTimeField(null=True, blank=True)
+    expire_date = models.DateTimeField(null=True, blank=True)
+    meta_title = JSONField(null=True, blank=True)
+    meta_tag = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return self.title.get("en", "Untitled")
+
+    class Meta:
+        db_table = "content"
+
+
+class Document(BaseModel):
+    name = JSONField(default=dict)
+    file = models.FileField(upload_to="documents/")
+    file_type = models.CharField(max_length=50)
+    category = models.CharField(max_length=50)
+    file_url = models.URLField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Document")
+
+    class Meta:
+        db_table = "document"
+
+
+class DocumentAccess(BaseModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    access_level = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.document.name.get('en', 'Unnamed Document')}"
+
+    class Meta:
+        db_table = "document_access"
+        unique_together = ("user", "document")
 
 
 class ActivityLog(BaseModel):
@@ -148,7 +256,7 @@ class ActivityLog(BaseModel):
         "Module", on_delete=models.SET_NULL, null=True, blank=True
     )
     action = models.CharField(max_length=100)
-    details = models.TextField(null=True, blank=True)
+    details = JSONField(null=True, blank=True)
     time_stamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -164,129 +272,9 @@ class UsageLog(BaseModel):
         db_table = "usage_log"
 
 
-class Country(BaseModel):
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=10)
-    flag = models.ImageField(upload_to="flags/", null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    notes = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "mst_country"
-
-
-class ContentType(BaseModel):
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "content_type"
-
-
-class Content(BaseModel):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    slug = models.SlugField(max_length=255, unique=True)
-    status = models.CharField(max_length=50)
-    title = models.CharField(max_length=255)
-    body = models.TextField()
-    publish_date = models.DateTimeField(null=True, blank=True)
-    expire_date = models.DateTimeField(null=True, blank=True)
-    meta_title = models.CharField(max_length=255, null=True, blank=True)
-    meta_tag = models.CharField(max_length=255, null=True, blank=True)
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        db_table = "content"
-
-
-class Module(BaseModel):
-    name = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "mst_module"
-
-
-class Course(BaseModel):
-    title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    thumbnail = models.ImageField(
-        upload_to="courses/thumbnails/", null=True, blank=True
-    )
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        db_table = "course"
-
-
-class ProductCategory(BaseModel):
-    name = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "product_category"
-
-
-class Product(BaseModel):
-    name = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
-    image = models.ImageField(upload_to="products/", null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "product"
-
-
-class Document(BaseModel):
-    name = models.CharField(max_length=255)
-    file = models.FileField(upload_to="documents/")
-    file_type = models.CharField(max_length=50)
-    category = models.CharField(max_length=50)
-    file_url = models.URLField(null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = "document"
-
-
-class DocumentAccess(BaseModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
-    access_level = models.CharField(max_length=50)  # e.g., read-only, downloadable
-
-    def __str__(self):
-        return f"{self.user.email} - {self.document.name}"
-
-    class Meta:
-        db_table = "document_access"
-        unique_together = ("user", "document")
-
-
-class lead(BaseModel):
+class Lead(BaseModel):
     # What is a status value in lead
-    name = models.CharField(max_length=255)
+    name = JSONField(default=dict)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     assigned_to = models.ForeignKey(
@@ -296,15 +284,15 @@ class lead(BaseModel):
     status = models.CharField(max_length=50)
 
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Lead")
 
 
-class conteact(BaseModel):
-    lead = models.ForeignKey(lead, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
+class Contact(BaseModel):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+    name = JSONField(default=dict)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
-    job_title = models.TextField()
+    job_title = JSONField(null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Contact")
