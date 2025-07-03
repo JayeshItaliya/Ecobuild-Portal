@@ -8,6 +8,7 @@ from backend.enums import UserRoleChoices
 from backend.enums import UserTypeChoices
 from backend.enums import VerificationStatusChoices
 from backend.models import BaseModel
+from utils.model_translation import AutoTranslateMixin
 
 
 class Language(BaseModel):
@@ -20,7 +21,6 @@ class Language(BaseModel):
 
 
 class User(AbstractBaseUser, BaseModel):
-    # TODO:WHat is a value of status in user_access_control
     email = models.EmailField(max_length=255, unique=True, db_index=True)
     role = models.CharField(
         max_length=50, choices=UserRoleChoices.choices, default=UserRoleChoices.USER
@@ -37,7 +37,6 @@ class User(AbstractBaseUser, BaseModel):
         choices=LoginMethodChoices.choices,
         default=LoginMethodChoices.EMAIL,
     )
-    # TODO: change the profile_image to a FileField
     profile_image = models.URLField(null=True, blank=True)
     verification_status = models.CharField(
         max_length=20,
@@ -66,9 +65,20 @@ class User(AbstractBaseUser, BaseModel):
         return self.is_superuser
 
 
-class Role(BaseModel):
+class BaseTranslatableModel(BaseModel, AutoTranslateMixin):
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.auto_translate_fields()
+        super().save(*args, **kwargs)
+
+
+class Role(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "description"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Role")
@@ -79,7 +89,7 @@ class Role(BaseModel):
         verbose_name_plural = "Roles"
 
 
-class Professional(BaseModel):
+class Professional(BaseTranslatableModel):
     user = models.OneToOneField(
         "User", on_delete=models.CASCADE, related_name="professional_profile"
     )
@@ -97,6 +107,8 @@ class Professional(BaseModel):
     )
     specializations = JSONField(null=True, blank=True)
 
+    TRANSLATABLE_FIELDS = ["profile_summary", "specializations"]
+
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -104,10 +116,12 @@ class Professional(BaseModel):
         db_table = "professional"
 
 
-class Company(BaseModel):
+class Company(BaseTranslatableModel):
     name = JSONField(default=dict)
     industry_type = JSONField(null=True, blank=True)
     website = models.URLField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "industry_type"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Company")
@@ -116,24 +130,25 @@ class Company(BaseModel):
         db_table = "mst_company"
 
 
-class Region(BaseModel):
+class Region(BaseTranslatableModel):
     name = JSONField(default=dict)
     country = models.ForeignKey("Country", on_delete=models.SET_NULL, null=True)
     code = models.CharField(max_length=10, null=True, blank=True)
 
+    TRANSLATABLE_FIELDS = ["name"]
+
     def __str__(self):
         return self.name.get("en", "Unnamed Region")
 
-    class Meta:
-        db_table = "mst_region"
 
-
-class Country(BaseModel):
+class Country(BaseTranslatableModel):
     name = JSONField(default=dict)
     code = models.CharField(max_length=10)
     flag = models.ImageField(upload_to="flags/", null=True, blank=True)
     is_active = models.BooleanField(default=True)
     notes = JSONField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "notes"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Country")
@@ -142,10 +157,12 @@ class Country(BaseModel):
         db_table = "mst_country"
 
 
-class Module(BaseModel):
+class Module(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+
+    TRANSLATABLE_FIELDS = ["name", "description"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Module")
@@ -154,12 +171,14 @@ class Module(BaseModel):
         db_table = "mst_module"
 
 
-class Course(BaseModel):
+class Course(BaseTranslatableModel):
     title = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
     thumbnail = models.ImageField(
         upload_to="courses/thumbnails/", null=True, blank=True
     )
+
+    TRANSLATABLE_FIELDS = ["title", "description"]
 
     def __str__(self):
         return self.title.get("en", "Untitled Course")
@@ -168,9 +187,11 @@ class Course(BaseModel):
         db_table = "course"
 
 
-class ProductCategory(BaseModel):
+class ProductCategory(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "description"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Category")
@@ -179,7 +200,7 @@ class ProductCategory(BaseModel):
         db_table = "product_category"
 
 
-class Product(BaseModel):
+class Product(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(default=dict)
     category = models.ForeignKey(
@@ -187,16 +208,17 @@ class Product(BaseModel):
     )
     image = models.ImageField(upload_to="products/", null=True, blank=True)
 
-    def __str__(self):
-        return self.name.get("en", "Unnamed Product")
+    TRANSLATABLE_FIELDS = ["name", "description"]
 
-    class Meta:
-        db_table = "product"
+    # def __str__(self):
+    #     return self.name.get("en", "Unnamed Product")
 
 
-class ContentType(BaseModel):
+class ContentType(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "description"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Type")
@@ -205,7 +227,7 @@ class ContentType(BaseModel):
         db_table = "content_type"
 
 
-class Content(BaseModel):
+class Content(BaseTranslatableModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=255, unique=True)
     status = models.CharField(max_length=50)
@@ -216,6 +238,8 @@ class Content(BaseModel):
     meta_title = JSONField(null=True, blank=True)
     meta_tag = JSONField(null=True, blank=True)
 
+    TRANSLATABLE_FIELDS = ["title", "body", "meta_title", "meta_tag"]
+
     def __str__(self):
         return self.title.get("en", "Untitled")
 
@@ -223,12 +247,14 @@ class Content(BaseModel):
         db_table = "content"
 
 
-class Document(BaseModel):
+class Document(BaseTranslatableModel):
     name = JSONField(default=dict)
     file = models.FileField(upload_to="documents/")
     file_type = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
     file_url = models.URLField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Document")
@@ -250,7 +276,7 @@ class DocumentAccess(BaseModel):
         unique_together = ("user", "document")
 
 
-class ActivityLog(BaseModel):
+class ActivityLog(BaseTranslatableModel):
     user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
     module_id = models.ForeignKey(
         "Module", on_delete=models.SET_NULL, null=True, blank=True
@@ -258,6 +284,8 @@ class ActivityLog(BaseModel):
     action = models.CharField(max_length=100)
     details = JSONField(null=True, blank=True)
     time_stamp = models.DateTimeField(auto_now_add=True)
+
+    TRANSLATABLE_FIELDS = ["details"]
 
     class Meta:
         db_table = "activity_log"
@@ -272,8 +300,7 @@ class UsageLog(BaseModel):
         db_table = "usage_log"
 
 
-class Lead(BaseModel):
-    # What is a status value in lead
+class Lead(BaseTranslatableModel):
     name = JSONField(default=dict)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
@@ -283,16 +310,20 @@ class Lead(BaseModel):
     score = models.IntegerField()
     status = models.CharField(max_length=50)
 
+    TRANSLATABLE_FIELDS = ["name"]
+
     def __str__(self):
         return self.name.get("en", "Unnamed Lead")
 
 
-class Contact(BaseModel):
+class Contact(BaseTranslatableModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
     name = JSONField(default=dict)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     job_title = JSONField(null=True, blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "job_title"]
 
     def __str__(self):
         return self.name.get("en", "Unnamed Contact")

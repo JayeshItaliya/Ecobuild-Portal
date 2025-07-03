@@ -1,21 +1,18 @@
-from typing import Dict
-
 TARGET_LANGUAGES = ["he", "ru", "ar"]
 BASE_LANGUAGE = "en"
 
 
 class FakeTranslator:
     """
-    Fake translator for development/testing only.
-    Replace with GoogleTranslator when you set up credentials.
+    For local development/testing only.
     """
 
     def translate_text(self, text: str, target_lang: str) -> str:
-        return f"{text} [{target_lang}]"  # fake translation format
+        return f"{text} [{target_lang}]"
 
     def generate_translations(
         self, base_text: str, base_lang: str = BASE_LANGUAGE
-    ) -> Dict[str, str]:
+    ) -> dict:
         translations = {base_lang: base_text}
         for lang in TARGET_LANGUAGES:
             translations[lang] = self.translate_text(base_text, lang)
