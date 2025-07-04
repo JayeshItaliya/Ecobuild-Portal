@@ -19,6 +19,11 @@ class Language(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = "language"
+        verbose_name = "Language"
+        verbose_name_plural = "Languages"
+
 
 class User(AbstractBaseUser, BaseModel):
     email = models.EmailField(max_length=255, unique=True, db_index=True)
@@ -63,6 +68,11 @@ class User(AbstractBaseUser, BaseModel):
 
     def has_perm(self, perm, obj=None):
         return self.is_superuser
+
+    class Meta:
+        db_table = "user"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
 
 class BaseTranslatableModel(BaseModel, AutoTranslateMixin):
@@ -114,6 +124,8 @@ class Professional(BaseTranslatableModel):
 
     class Meta:
         db_table = "professional"
+        verbose_name = "Professional"
+        verbose_name_plural = "Professionals"
 
 
 class Company(BaseTranslatableModel):
@@ -128,6 +140,8 @@ class Company(BaseTranslatableModel):
 
     class Meta:
         db_table = "mst_company"
+        verbose_name = "Company"
+        verbose_name_plural = "Companies"
 
 
 class Region(BaseTranslatableModel):
@@ -139,6 +153,11 @@ class Region(BaseTranslatableModel):
 
     def __str__(self):
         return self.name.get("en", "Unnamed Region")
+
+    class Meta:
+        db_table = "region"
+        verbose_name = "Region"
+        verbose_name_plural = "Regions"
 
 
 class Country(BaseTranslatableModel):
@@ -155,6 +174,8 @@ class Country(BaseTranslatableModel):
 
     class Meta:
         db_table = "mst_country"
+        verbose_name = "Country"
+        verbose_name_plural = "Countries"
 
 
 class Module(BaseTranslatableModel):
@@ -169,6 +190,8 @@ class Module(BaseTranslatableModel):
 
     class Meta:
         db_table = "mst_module"
+        verbose_name = "Module"
+        verbose_name_plural = "Modules"
 
 
 class Course(BaseTranslatableModel):
@@ -185,6 +208,8 @@ class Course(BaseTranslatableModel):
 
     class Meta:
         db_table = "course"
+        verbose_name = "Course"
+        verbose_name_plural = "Courses"
 
 
 class ProductCategory(BaseTranslatableModel):
@@ -198,6 +223,8 @@ class ProductCategory(BaseTranslatableModel):
 
     class Meta:
         db_table = "product_category"
+        verbose_name = "Product Category"
+        verbose_name_plural = "Product Categories"
 
 
 class Product(BaseTranslatableModel):
@@ -210,8 +237,12 @@ class Product(BaseTranslatableModel):
 
     TRANSLATABLE_FIELDS = ["name", "description"]
 
-    # def __str__(self):
-    #     return self.name.get("en", "Unnamed Product")
+    def __str__(self):
+        return self.name.get("en", "Unnamed Product")
+
+    class Meta:
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
 
 
 class ContentType(BaseTranslatableModel):
@@ -225,6 +256,8 @@ class ContentType(BaseTranslatableModel):
 
     class Meta:
         db_table = "content_type"
+        verbose_name = "Content Type"
+        verbose_name_plural = "Content Types"
 
 
 class Content(BaseTranslatableModel):
@@ -245,6 +278,8 @@ class Content(BaseTranslatableModel):
 
     class Meta:
         db_table = "content"
+        verbose_name = "Content"
+        verbose_name_plural = "Contents"
 
 
 class Document(BaseTranslatableModel):
@@ -261,6 +296,8 @@ class Document(BaseTranslatableModel):
 
     class Meta:
         db_table = "document"
+        verbose_name = "Document"
+        verbose_name_plural = "Documents"
 
 
 class DocumentAccess(BaseModel):
@@ -273,6 +310,8 @@ class DocumentAccess(BaseModel):
 
     class Meta:
         db_table = "document_access"
+        verbose_name = "Document Access"
+        verbose_name_plural = "Document Accesses"
         unique_together = ("user", "document")
 
 
@@ -289,6 +328,8 @@ class ActivityLog(BaseTranslatableModel):
 
     class Meta:
         db_table = "activity_log"
+        verbose_name = "Activity Log"
+        verbose_name_plural = "Activity Logs"
 
 
 class UsageLog(BaseModel):
@@ -298,6 +339,8 @@ class UsageLog(BaseModel):
 
     class Meta:
         db_table = "usage_log"
+        verbose_name = "Usage Log"
+        verbose_name_plural = "Usage Logs"
 
 
 class Lead(BaseTranslatableModel):
@@ -315,6 +358,10 @@ class Lead(BaseTranslatableModel):
     def __str__(self):
         return self.name.get("en", "Unnamed Lead")
 
+    class Meta:
+        verbose_name = "Lead"
+        verbose_name_plural = "Leads"
+
 
 class Contact(BaseTranslatableModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
@@ -327,3 +374,7 @@ class Contact(BaseTranslatableModel):
 
     def __str__(self):
         return self.name.get("en", "Unnamed Contact")
+
+    class Meta:
+        verbose_name = "Contact"
+        verbose_name_plural = "Contacts"
