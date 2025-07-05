@@ -1,13 +1,16 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
+
 from accounts.serializers.register import ValidateTokenAPIView
-from accounts.views.auth.auth_views import LogoutAPIView, SigninView
-from accounts.views.auth.password_view import (
-    ChangePasswordAPIView,
-    ForgotPasswordView,
-    PasswordResetConfirmAPIView,
-)
+from accounts.views.auth.auth_views import LogoutAPIView
+from accounts.views.auth.auth_views import SigninView
+from accounts.views.auth.password_view import ChangePasswordAPIView
+from accounts.views.auth.password_view import ForgotPasswordView
+from accounts.views.auth.password_view import PasswordResetConfirmAPIView
 from accounts.views.auth.registration_views import SignupView
+from accounts.views.user.team_members import TeamMemberListAPIView
+from accounts.views.user.user_role import RoleListCreateAPIView
+from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
@@ -25,5 +28,20 @@ urlpatterns = [
         "validate-password-reset-token/<str:token>",
         ValidateTokenAPIView.as_view(),
         name="validate-password-reset-token",
+    ),
+    path(
+        "team-members/",
+        TeamMemberListAPIView.as_view(),
+        name="team-members-list",
+    ),
+    path(
+        "role/",
+        RoleListCreateAPIView.as_view(),
+        name="role-list-create",
+    ),
+    path(
+        "role/<str:pk>/",
+        RoleRetrieveUpdateDestroyAPIView.as_view(),
+        name="role-detail",
     ),
 ]

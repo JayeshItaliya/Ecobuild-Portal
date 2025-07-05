@@ -1,9 +1,13 @@
-from django.shortcuts import get_object_or_404
 import jwt
+from django.shortcuts import get_object_or_404
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
+from rest_framework.serializers import ValidationError
+
 from accounts.models import User
 from backend import settings
-from rest_framework.serializers import ValidationError
+
+
 class ApiRenderer(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
         """
@@ -55,8 +59,6 @@ class ApiRenderer(JSONRenderer):
         return super().render(response_dict, accepted_media_type, renderer_context)
 
 
-
-
 def token_validation(token):
     """
     Validate the given JWT token.
@@ -93,3 +95,7 @@ def token_validation(token):
         # Raise validation error if token is invalid
         raise ValidationError({"message": "Invalid Reset password URL"})
 
+
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
