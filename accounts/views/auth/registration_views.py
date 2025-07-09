@@ -25,9 +25,9 @@ class SignupView(CreateAPIView):
 
         with transaction.atomic():
             # new_generated_password = generate_password()
-            new_generated_password = "password"
+            # new_generated_password = "password"
             serializer.save(
-                password=new_generated_password,
+                # password=new_generated_password,
             )
             # Save user data
 

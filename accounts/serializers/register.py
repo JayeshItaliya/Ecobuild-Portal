@@ -1,14 +1,16 @@
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.serializers import CharField
 from rest_framework.serializers import EmailField
 from rest_framework.serializers import ModelSerializer
-from django.contrib.auth.password_validation import validate_password
-from accounts.models import User
 from rest_framework.serializers import ValidationError
-from django.contrib.auth.hashers import make_password
-from rest_framework import status
-from backend.utils import token_validation
 from rest_framework.views import APIView
-from rest_framework.response import Response 
+
+from accounts.models import User
+from backend.utils import token_validation
+
 
 def validate_email_case_insensitive(email):
     """
@@ -30,9 +32,7 @@ class RegisterUserSerializer(ModelSerializer):
     """
 
     # Define password field with write-only access and password validation
-    password = CharField(
-        write_only=True, validators=[validate_password], required=False
-    )
+    password = CharField(write_only=True, validators=[validate_password], required=True)
     email = EmailField(validators=[validate_email_case_insensitive])
 
     class Meta:
@@ -55,8 +55,6 @@ class RegisterUserSerializer(ModelSerializer):
         user = super().create(validated_data)
 
         return user
-
-
 
 
 class ValidateTokenAPIView(APIView):
