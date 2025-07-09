@@ -8,13 +8,11 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from backend.utils import token_validation
 
-from accounts.serializers.password import (
-    ChangePasswordSerializer,
-    ForgotPasswordSerializer,
-    ResetPasswordSerializer,
-)
+from accounts.serializers.password import ChangePasswordSerializer
+from accounts.serializers.password import ForgotPasswordSerializer
+from accounts.serializers.password import ResetPasswordSerializer
+from backend.utils import token_validation
 
 
 class ChangePasswordAPIView(UpdateAPIView):

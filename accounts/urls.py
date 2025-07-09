@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.serializers.register import ValidateTokenAPIView
 from accounts.views.auth.auth_views import LogoutAPIView
 from accounts.views.auth.auth_views import SigninView
+from accounts.views.auth.facebook import FacebookLogin
 from accounts.views.auth.password_view import ChangePasswordAPIView
 from accounts.views.auth.password_view import ForgotPasswordView
 from accounts.views.auth.password_view import PasswordResetConfirmAPIView
@@ -13,6 +14,7 @@ from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
 
 urlpatterns = [
+    path("facebook/", FacebookLogin.as_view(), name="facebook_login"),
     path("signup/", SignupView.as_view(), name="signup"),
     path("signin/", SigninView.as_view(), name="signin"),
     path("logout/", LogoutAPIView.as_view(), name="logout"),

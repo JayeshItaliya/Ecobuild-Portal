@@ -47,17 +47,55 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.facebook",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
 ]
 
 THIRD_PARTY_APPS = [
     "rest_framework",
-    "drf_yasg",
+    "rest_framework.authtoken",
     "corsheaders",
+    "drf_yasg",
 ]
 
 INHOUSE_APPS = ["accounts"]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+SITE_ID = 1
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_LOGIN_METHODS = {"email"}
+SOCIALACCOUNT_PROVIDERS = {
+    "facebook": {
+        "APP": {
+            "client_id": os.getenv("FACEBOOK_APP_ID"),
+            "secret": os.getenv("FACEBOOK_APP_SECRET"),
+            "key": "",
+        },
+        "SCOPE": ["email", "public_profile"],
+        "FIELDS": ["id", "email", "name", "first_name", "last_name"],
+        "METHOD": "oauth2",
+    }
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -65,6 +103,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
