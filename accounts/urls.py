@@ -5,6 +5,7 @@ from accounts.serializers.register import ValidateTokenAPIView
 from accounts.views.auth.auth_views import LogoutAPIView
 from accounts.views.auth.auth_views import SigninView
 from accounts.views.auth.facebook import FacebookLogin
+from accounts.views.auth.google_auth import GoogleLoginView
 from accounts.views.auth.password_view import ChangePasswordAPIView
 from accounts.views.auth.password_view import ForgotPasswordView
 from accounts.views.auth.password_view import PasswordResetConfirmAPIView
@@ -45,5 +46,10 @@ urlpatterns = [
         "role/<str:pk>/",
         RoleRetrieveUpdateDestroyAPIView.as_view(),
         name="role-detail",
+    ),
+    path(
+        "google/login/",
+        GoogleLoginView.as_view(),
+        name="google-login",
     ),
 ]
