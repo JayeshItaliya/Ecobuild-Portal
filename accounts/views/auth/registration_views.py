@@ -1,10 +1,9 @@
-from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView
 from django.db import transaction
-from accounts.serializers.register import RegisterUserSerializer
 from rest_framework import status
+from rest_framework.generics import CreateAPIView
+from rest_framework.response import Response
 
-from accounts.utils import generate_password
+from accounts.serializers.register import RegisterUserSerializer
 
 
 class SignupView(CreateAPIView):

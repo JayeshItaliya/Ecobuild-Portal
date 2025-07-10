@@ -26,6 +26,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Ecobuild Portal URLs
     path("api/auth/", include("accounts.urls")),
+    # Facebook authentication
+    path("api/auth/", include("dj_rest_auth.urls")),
+    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("accounts/", include("allauth.urls")),  # Required for social login redirects
     # Swagger URLs
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
