@@ -3,8 +3,8 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from accounts.serializers.sign_in_seralizer import LogoutSerializer, SignInUserSerializer
-from backend.enums import VerificationStatusChoices
+from accounts.serializers.sign_in_seralizer import LogoutSerializer
+from accounts.serializers.sign_in_seralizer import SignInUserSerializer
 
 
 class SigninView(TokenObtainPairView):
@@ -19,7 +19,7 @@ class SigninView(TokenObtainPairView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        verification_status = serializer.user.verification_status
+        serializer.user.verification_status
 
         # if verification_status == VerificationStatusChoices.PENDING:
         #     message = "Your account is pending verification. Please wait for approval before logging in. Thank you for your patience."
