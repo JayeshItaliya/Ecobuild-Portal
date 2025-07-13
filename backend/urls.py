@@ -24,23 +24,22 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Ecobuild Portal Admin URLs
     path("admin/", admin.site.urls),
+
     # Ecobuild Portal URLs
-    path("api/auth/", include("accounts.urls")),
-    # Facebook authentication
+    path("api/account/", include("accounts.urls.urls")),
+
+    # Oauth2 APIs URLs
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
-    path("accounts/", include("allauth.urls")),  # Required for social login redirects
-    # Swagger URLs
+    path("accounts/", include("allauth.urls")),
+
+    # Swagger
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
         schema_view.without_ui(cache_timeout=0),
         name="schema-json",
     ),
-    path(
-        "swagger/",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
+    path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
