@@ -63,7 +63,7 @@ THIRD_PARTY_APPS = [
     "drf_yasg",
 ]
 
-INHOUSE_APPS = ["accounts"]
+INHOUSE_APPS = ["accounts", 'cms',]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 

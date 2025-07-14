@@ -27,6 +27,7 @@ urlpatterns = [
 
     # Ecobuild Portal URLs
     path("api/account/", include("accounts.urls.urls")),
+    path('api/cms/', include('cms.urls')),
 
     # Oauth2 APIs URLs
     path("api/auth/", include("dj_rest_auth.urls")),
