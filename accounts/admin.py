@@ -2,7 +2,6 @@
 
 from django.contrib import admin
 
-from .models import Product
 from .models import Role
 from .models import User
 
@@ -17,11 +16,5 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
-    ordering = ("id",)
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "description")
     ordering = ("id",)
