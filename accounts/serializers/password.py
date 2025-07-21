@@ -1,8 +1,10 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework.serializers import CharField
 from rest_framework.serializers import EmailField
 from rest_framework.serializers import Serializer
 from rest_framework.serializers import ValidationError
-from django.contrib.auth.password_validation import validate_password
+
+
 class ChangePasswordSerializer(Serializer):
 
     password = CharField(write_only=True, required=True, validators=[validate_password])
@@ -52,4 +54,3 @@ class ResetPasswordSerializer(Serializer):
     """
 
     password = CharField(write_only=True, required=True, validators=[validate_password])
-

@@ -64,7 +64,10 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt.token_blacklist",
 ]
 
-INHOUSE_APPS = ["accounts", 'cms',]
+INHOUSE_APPS = [
+    "accounts",
+    "cms",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 
@@ -76,7 +79,7 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = {
     "email": {"required": True},
     "password1": {"required": True},

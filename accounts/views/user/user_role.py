@@ -1,9 +1,9 @@
-from accounts.mixins import TranslatedResponseMixin
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
+from accounts.mixins import TranslatedResponseMixin
 from accounts.models import Role
 from accounts.serializers.user_role import RoleResponseSerializer
 from accounts.serializers.user_role import RoleSerializer

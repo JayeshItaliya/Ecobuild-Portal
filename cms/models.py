@@ -1,7 +1,9 @@
 from django.db import models
 from django.db.models import JSONField
-from backend.models import BaseModel, BaseTranslatableModel
+
 from accounts.models import User
+from backend.models import BaseModel
+from backend.models import BaseTranslatableModel
 
 
 class Module(BaseTranslatableModel):
@@ -23,7 +25,9 @@ class Module(BaseTranslatableModel):
 class Course(BaseTranslatableModel):
     title = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
-    thumbnail = models.ImageField(upload_to="courses/thumbnails/", null=True, blank=True)
+    thumbnail = models.ImageField(
+        upload_to="courses/thumbnails/", null=True, blank=True
+    )
 
     TRANSLATABLE_FIELDS = ["title", "description"]
 

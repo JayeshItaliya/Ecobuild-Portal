@@ -2,8 +2,10 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
 
-from backend import settings
-from backend.enums import LoginMethodChoices, UserRoleChoices, UserTypeChoices, VerificationStatusChoices
+from backend.enums import LoginMethodChoices
+from backend.enums import UserRoleChoices
+from backend.enums import UserTypeChoices
+from backend.enums import VerificationStatusChoices
 from backend.models import BaseModel
 from backend.models import BaseTranslatableModel
 
@@ -24,14 +26,31 @@ class Language(BaseModel):
 
 class User(AbstractBaseUser, BaseModel):
     email = models.EmailField(max_length=255, unique=True, db_index=True)
-    role = models.CharField(max_length=50, choices=UserRoleChoices.choices, default=UserRoleChoices.USER)
+    role = models.CharField(
+        max_length=50, choices=UserRoleChoices.choices, default=UserRoleChoices.USER
+    )
     full_name = models.CharField(max_length=50, null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)
-    user_type = models.CharField(max_length=50, choices=UserTypeChoices.choices, default=UserTypeChoices.HOMEOWNER)
-    login_method = models.CharField(max_length=50, choices=LoginMethodChoices.choices, default=LoginMethodChoices.EMAIL)
+    user_type = models.CharField(
+        max_length=50,
+        choices=UserTypeChoices.choices,
+        default=UserTypeChoices.HOMEOWNER,
+    )
+    login_method = models.CharField(
+        max_length=50,
+        choices=LoginMethodChoices.choices,
+        default=LoginMethodChoices.EMAIL,
+    )
     profile_image = models.URLField(null=True, blank=True)
-    verification_status = models.CharField(max_length=20, choices=VerificationStatusChoices.choices, default=VerificationStatusChoices.PENDING, db_index=True)
-    language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VerificationStatusChoices.choices,
+        default=VerificationStatusChoices.PENDING,
+        db_index=True,
+    )
+    language = models.ForeignKey(
+        Language, on_delete=models.SET_NULL, null=True, blank=True
+    )
     organization = models.CharField(max_length=50, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -71,15 +90,21 @@ class Role(BaseTranslatableModel):
 
 
 class Professional(BaseTranslatableModel):
-    user = models.OneToOneField("User", on_delete=models.CASCADE, related_name="professional_profile")
+    user = models.OneToOneField(
+        "User", on_delete=models.CASCADE, related_name="professional_profile"
+    )
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
-    company = models.ForeignKey("Company", on_delete=models.SET_NULL, null=True, blank=True)
+    company = models.ForeignKey(
+        "Company", on_delete=models.SET_NULL, null=True, blank=True
+    )
     role = models.ForeignKey("Role", on_delete=models.SET_NULL, null=True, blank=True)
     profile_summary = JSONField(null=True, blank=True)
-    region = models.ForeignKey("Region", on_delete=models.SET_NULL, null=True, blank=True)
+    region = models.ForeignKey(
+        "Region", on_delete=models.SET_NULL, null=True, blank=True
+    )
     specializations = JSONField(null=True, blank=True)
 
     TRANSLATABLE_FIELDS = ["profile_summary", "specializations"]
@@ -145,7 +170,9 @@ class Country(BaseTranslatableModel):
 
 class ActivityLog(BaseTranslatableModel):
     user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
-    module_id = models.ForeignKey("cms.Module", on_delete=models.SET_NULL, null=True, blank=True)
+    module_id = models.ForeignKey(
+        "cms.Module", on_delete=models.SET_NULL, null=True, blank=True
+    )
     action = models.CharField(max_length=100)
     details = JSONField(null=True, blank=True)
     time_stamp = models.DateTimeField(auto_now_add=True)
