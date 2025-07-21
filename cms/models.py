@@ -1,9 +1,12 @@
 from django.db import models
 from django.db.models import JSONField
+from django.utils.text import slugify
 
 from accounts.models import User
 from backend.models import BaseModel
 from backend.models import BaseTranslatableModel
+from cms.enums import STATUS_CHOICES
+from cms.utils import calculate_reading_time
 
 
 class Module(BaseTranslatableModel):
@@ -174,3 +177,69 @@ class Contact(BaseTranslatableModel):
     class Meta:
         verbose_name = "Contact"
         verbose_name_plural = "Contacts"
+
+
+class Category(BaseModel):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(BaseModel):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=70, unique=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class BlogPost(BaseModel):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="blog_posts",
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name="blog_posts",
+    )
+    content = models.TextField()
+    featured_image = models.ImageField(
+        upload_to="blog_images/",
+        blank=True,
+        null=True,
+    )
+    meta_title = models.CharField(max_length=255, blank=True, null=True)
+    meta_description = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES.choices,
+        default=STATUS_CHOICES.DRAFT,
+    )
+    views_count = models.PositiveIntegerField(default=0)
+    reading_time = models.PositiveIntegerField(default=0)  # in minutes
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        self.reading_time = calculate_reading_time(self.content)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
