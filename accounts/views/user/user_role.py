@@ -3,12 +3,13 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
+from accounts.mixins import TranslatedResponseMixin
 from accounts.models import Role
 from accounts.serializers.user_role import RoleResponseSerializer
 from accounts.serializers.user_role import RoleSerializer
 
 
-class BaseRoleAPIView:
+class BaseRoleAPIView(TranslatedResponseMixin):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
     response_serializer_class = RoleResponseSerializer
@@ -17,20 +18,19 @@ class BaseRoleAPIView:
 class RoleListCreateAPIView(BaseRoleAPIView, ListCreateAPIView):
 
     def get(self, request):
+        lang_code = self.get_language_code(request)
+        queryset = self.filter_queryset(self.get_queryset())
 
-        # Apply search filter
-        instance = self.filter_queryset(self.get_queryset())
-
-        # Paginate the queryset
-        page = self.paginate_queryset(instance)
-
+        page = self.paginate_queryset(queryset)
         if page is not None:
-            # Serialize paginated data
+            page = self.translate_queryset(page, lang_code)
             data = self.response_serializer_class(page, many=True).data
             return self.get_paginated_response(data)
 
-        serializer = self.response_serializer_class(instance=instance, many=True)
+        queryset = self.translate_queryset(queryset, lang_code)
+        serializer = self.response_serializer_class(queryset, many=True)
         return Response(
+            # message="Roles fetched successfully.",
             data=serializer.data,
             status=status.HTTP_200_OK,
         )
@@ -40,6 +40,7 @@ class RoleListCreateAPIView(BaseRoleAPIView, ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
+            # message="Role created successfully.",
             data=serializer.data,
             status=status.HTTP_201_CREATED,
         )
@@ -60,12 +61,10 @@ class RoleRetrieveUpdateDestroyAPIView(BaseRoleAPIView, RetrieveUpdateDestroyAPI
         Handles GET request to retrieve initiatives created by the authenticated user.
         Retrieves initiatives from the database, serializes them, and returns a response.
         """
-        instance = self.get_object()
+        lang_code = self.get_language_code(request)
+        instance = self.translate_instance(self.get_object(), lang_code)
         serializer = self.get_serializer(instance)
-        return Response(
-            data=serializer.data,
-            status=status.HTTP_200_OK,
-        )
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
         """

@@ -7,6 +7,7 @@ from backend import settings
 from backend.manager import SoftDeletionManager
 from utils.model_translation import AutoTranslateMixin
 
+
 class SoftDeleteBaseModel(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
     deleted_by = models.ForeignKey(

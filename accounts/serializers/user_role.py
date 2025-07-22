@@ -6,7 +6,7 @@ from accounts.models import Role
 class RoleSerializer(ModelSerializer):
     class Meta:
         model = Role
-        fields = "__all__"
+        fields = ["id", "name", "description"]
 
 
 class RoleResponseSerializer(ModelSerializer):
