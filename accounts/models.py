@@ -178,7 +178,7 @@ class ActivityLog(BaseTranslatableModel):
     )
 
     module = models.ForeignKey(
-        "Module",
+        "cms.Module",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
