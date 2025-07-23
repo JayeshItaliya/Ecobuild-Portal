@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import ValidationError
 
+from accounts.models import ActivityLog
 from accounts.models import User
 from backend import settings
 
@@ -99,3 +100,29 @@ def token_validation(token):
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
+
+
+def create_audit_log(
+    user, module, action, object_id=None, details=None, description=None
+):
+    """
+    Utility function to create an audit log entry.
+
+    :param user: The user who performed the action
+    :param module: The name of the module where the action occurred
+    :param action: The action type (create, edit, delete)
+    :param object_id: ID of the affected object (optional)
+    :param details: Additional details in JSON format (optional)
+    :param description: Human-readable description of the action (optional)
+    :return: The created AuditLog object
+    """
+    # Create a new audit log entry
+    audit_log = ActivityLog.objects.create(
+        user=user,
+        module=module if module else None,
+        action=action,
+        object_id=object_id,
+        details=details,
+    )
+
+    return audit_log

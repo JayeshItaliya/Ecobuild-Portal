@@ -13,6 +13,7 @@ from accounts.views.account.registration_views import SignupView
 from accounts.views.user.team_members import TeamMemberListAPIView
 from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
+from accounts.views.user_activity_log import UserActivityLogListAPIView
 
 urlpatterns = [
     path("facebook/", FacebookLogin.as_view(), name="facebook_login"),
@@ -51,5 +52,10 @@ urlpatterns = [
         "google/login/",
         GoogleLoginView.as_view(),
         name="google-login",
+    ),
+    path(
+        "user-activity/",
+        UserActivityLogListAPIView.as_view(),
+        name="user-activity",
     ),
 ]

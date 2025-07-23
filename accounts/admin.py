@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 
+from .models import ActivityLog
 from .models import Role
 from .models import User
 
@@ -18,3 +19,9 @@ class UserAdmin(admin.ModelAdmin):
 class RoleAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "description")
     ordering = ("id",)
+
+
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "details", "action", "module", "time_stamp")
+    ordering = ("-time_stamp",)

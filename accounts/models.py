@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
 
-from backend.enums import LoginMethodChoices
+from backend.enums import ActionType, LoginMethodChoices
 from backend.enums import UserRoleChoices
 from backend.enums import UserTypeChoices
 from backend.enums import VerificationStatusChoices
@@ -169,11 +169,33 @@ class Country(BaseTranslatableModel):
 
 
 class ActivityLog(BaseTranslatableModel):
-    user = models.ForeignKey("User", on_delete=models.SET_NULL, null=True, blank=True)
-    module_id = models.ForeignKey(
-        "cms.Module", on_delete=models.SET_NULL, null=True, blank=True
+    user = models.ForeignKey(
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="activity_logs",
     )
-    action = models.CharField(max_length=100)
+
+    module = models.ForeignKey(
+        "Module",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="activity_logs",
+    )
+    action = models.CharField(
+        max_length=10,
+        choices=ActionType.choices,
+        db_index=True,
+    )
+    object_id = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     details = JSONField(null=True, blank=True)
     time_stamp = models.DateTimeField(auto_now_add=True)
 
