@@ -5,14 +5,14 @@ from rest_framework.response import Response
 
 from backend.utils import CustomPagination
 from cms.models import BlogPost
-from cms.serializers.blog_management import BlogManagementSerializer
+from cms.serializers.blog_management import BlogManagementSerializer, BlogResponseSerializer
 
 
 class BaseBlogManagement:
     queryset = BlogPost.objects.all()
     list_serializer_class = BlogManagementSerializer
     serializer_class = BlogManagementSerializer
-    response_serializer_class = BlogManagementSerializer
+    response_serializer_class = BlogResponseSerializer
     pagination_class = CustomPagination
 
 
