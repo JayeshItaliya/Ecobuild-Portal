@@ -5,7 +5,10 @@ from rest_framework.response import Response
 
 from backend.utils import CustomPagination
 from cms.models import BlogPost
-from cms.serializers.blog_management import BlogManagementSerializer, BlogResponseSerializer
+from cms.serializers.blog_management import (
+    BlogManagementSerializer,
+    BlogResponseSerializer,
+)
 
 
 class BaseBlogManagement:
@@ -99,10 +102,11 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(
             data={
-                "data": self.response_serializer_class(updated_data).data,
+                "data": self.response_serializer_class(serializer.data).data,
                 "message": "Blog updated successfully.",
             },
             status=status.HTTP_200_OK,
