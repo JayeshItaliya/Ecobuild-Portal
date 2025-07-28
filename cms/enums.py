@@ -10,3 +10,7 @@ class BaseStatusChoices(models.TextChoices):
 class STATUS_CHOICES(BaseStatusChoices):
     DRAFT = "Draft", "Draft"
     PUBLISHED = "Published", "Published"
+
+class GALLERY_TYPE(BaseStatusChoices):
+    IMAGE = "Image", "Image"
+    VIDEO = "Video", "Video"

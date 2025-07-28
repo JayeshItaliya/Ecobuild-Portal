@@ -3,8 +3,8 @@ from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 
-from cms.models import Document
-from cms.models import DocumentAccess
+from cms.models.module import Document
+from cms.models.module import DocumentAccess
 from cms.serializers.document_serializer import DocumentAccessSerializer
 from cms.serializers.document_serializer import DocumentSerializer
 

@@ -4,7 +4,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from backend.utils import CustomPagination
-from cms.models import BlogPost
+from cms.models.module import BlogPost
 from cms.serializers.blog_management import (
     BlogManagementSerializer,
     BlogResponseSerializer,
