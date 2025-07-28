@@ -6,8 +6,10 @@ from cms.views.blog_management import BlogManagementListCreateAPIVIew
 from cms.views.blog_management import BlogManagementRetrieveUpdateDestroyAPIView
 from cms.views.document import DocumentAccessViewSet
 from cms.views.document import DocumentViewSet
-from cms.views.gallery import GalleryCategoryListCreateAPIView
-from cms.views.gallery import GalleryCategoryRetrieveUpdateDestroyAPIView
+from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
+from cms.views.gallery.gallery_category import (
+    GalleryCategoryRetrieveUpdateDestroyAPIView,
+)
 
 router = DefaultRouter()
 router.register(r"documents", DocumentViewSet, basename="document")
@@ -35,6 +37,6 @@ urlpatterns = [
     path(
         "gallery-category/<str:pk>/",
         GalleryCategoryRetrieveUpdateDestroyAPIView.as_view(),
-        name="gallery-category-detail",
+        name="gallery-category-update-delete",
     ),
 ]
