@@ -1,5 +1,6 @@
 from django.db import models
-from django.forms import JSONField
+from django.db.models import JSONField
+
 from backend.models import BaseTranslatableModel
 from cms.enums import GALLERY_TYPE
 
