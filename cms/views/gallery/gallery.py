@@ -3,22 +3,20 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
-from cms.models.gallery import GalleryCategory
-from cms.serializers.gallery_category_serializer import GalleryCategoryListSerializer
-from cms.serializers.gallery_category_serializer import (
-    GalleryCategoryResponseSerializer,
-)
-from cms.serializers.gallery_category_serializer import GalleryCategorySerializer
+from cms.models.gallery import Gallery
+from cms.serializers.gallery_serializer import GalleryListSerializer
+from cms.serializers.gallery_serializer import GalleryResponseSerializer
+from cms.serializers.gallery_serializer import GallerySerializer
 
 
-class BaseGalleryCategory:
-    queryset = GalleryCategory.objects.order_by("-created_at")
-    serializer_class = GalleryCategorySerializer
-    list_serializer_class = GalleryCategoryListSerializer
-    response_serializer_class = GalleryCategoryResponseSerializer
+class BaseGalleryAPIView:
+    queryset = Gallery.objects.order_by("-created_at")
+    serializer_class = GallerySerializer
+    list_serializer_class = GalleryListSerializer
+    response_serializer_class = GalleryResponseSerializer
 
 
-class GalleryCategoryListCreateAPIView(BaseGalleryCategory, ListCreateAPIView):
+class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         """
         Handles GET request to retrieve initiatives created by the authenticated user.
@@ -61,14 +59,14 @@ class GalleryCategoryListCreateAPIView(BaseGalleryCategory, ListCreateAPIView):
         return Response(
             data={
                 "data": self.response_serializer_class(blog_post).data,
-                "message": "Gallery category created successfully.",
+                "message": "Gallery created successfully.",
             },
             status=status.HTTP_201_CREATED,
         )
 
 
-class GalleryCategoryRetrieveUpdateDestroyAPIView(
-    BaseGalleryCategory, RetrieveUpdateDestroyAPIView
+class GalleryRetrieveUpdateDestroyAPIView(
+    BaseGalleryAPIView, RetrieveUpdateDestroyAPIView
 ):
     http_method_names = ["get", "patch", "delete"]
     # queryset = Measure.objects.select_related("measure_type", "created_by")
@@ -91,6 +89,9 @@ class GalleryCategoryRetrieveUpdateDestroyAPIView(
         Validates incoming data, performs partial update, and returns a response.
         """
         instance = self.get_object()
+        # Debug: See what request.data contains
+        print("Request Data:", request.data)
+        print("FILES:", request.FILES)
         serializer = self.get_serializer(
             instance,
             data=request.data,
@@ -103,7 +104,7 @@ class GalleryCategoryRetrieveUpdateDestroyAPIView(
         return Response(
             data={
                 "data": self.response_serializer_class(serializer.data).data,
-                "message": "Gallery category updated successfully.",
+                "message": "Gallery updated successfully.",
             },
             status=status.HTTP_200_OK,
         )
@@ -117,7 +118,7 @@ class GalleryCategoryRetrieveUpdateDestroyAPIView(
         instance.delete(self.request.user)
         return Response(
             data={
-                "message": "Gallery category deleted successfully.",
+                "message": "Gallery deleted successfully.",
             },
             status=status.HTTP_204_NO_CONTENT,
         )

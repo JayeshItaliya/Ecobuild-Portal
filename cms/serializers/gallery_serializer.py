@@ -1,21 +1,26 @@
 from rest_framework.serializers import ModelSerializer
 
-from cms.models.gallery import GalleryCategory
+from cms.models.gallery import Gallery
+from cms.serializers.gallery_category_serializer import GalleryCategoryListSerializer
 
 
-class GalleryCategorySerializer(ModelSerializer):
+class GallerySerializer(ModelSerializer):
     class Meta:
-        model = GalleryCategory
+        model = Gallery
         fields = "__all__"
 
 
-class GalleryCategoryResponseSerializer(ModelSerializer):
+class GalleryResponseSerializer(ModelSerializer):
+    category = GalleryCategoryListSerializer()
+
     class Meta:
-        model = GalleryCategory
-        fields = ["id", "name", "type", "description"]
+        model = Gallery
+        fields = ["id", "image", "category", "video"]
 
 
-class GalleryCategoryListSerializer(ModelSerializer):
+class GalleryListSerializer(ModelSerializer):
+    category = GalleryCategoryListSerializer()
+
     class Meta:
-        model = GalleryCategory
-        fields = ["id", "name", "type"]
+        model = Gallery
+        fields = ["id", "image", "category", "video"]

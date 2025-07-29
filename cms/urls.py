@@ -6,6 +6,8 @@ from cms.views.blog_management import BlogManagementListCreateAPIVIew
 from cms.views.blog_management import BlogManagementRetrieveUpdateDestroyAPIView
 from cms.views.document import DocumentAccessViewSet
 from cms.views.document import DocumentViewSet
+from cms.views.gallery.gallery import GalleryListAPIView
+from cms.views.gallery.gallery import GalleryRetrieveUpdateDestroyAPIView
 from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
 from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
@@ -38,5 +40,15 @@ urlpatterns = [
         "gallery-category/<str:pk>/",
         GalleryCategoryRetrieveUpdateDestroyAPIView.as_view(),
         name="gallery-category-update-delete",
+    ),
+    path(
+        "gallery/",
+        GalleryListAPIView.as_view(),
+        name="gallery-list-crete",
+    ),
+    path(
+        "gallery/<str:pk>/",
+        GalleryRetrieveUpdateDestroyAPIView.as_view(),
+        name="gallery-retrive-update-delete",
     ),
 ]
