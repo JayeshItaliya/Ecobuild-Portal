@@ -12,10 +12,15 @@ from cms.views.gallery.gallery_category import   GalleryCategoryChoicesAPIView, 
 from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
+from cms.views.contact import ContactMessageViewSet
+from cms.views.faq import FAQViewSet
 
 router = DefaultRouter()
 router.register(r"documents", DocumentViewSet, basename="document")
 router.register(r"document-access", DocumentAccessViewSet, basename="document-access")
+router.register(r"faqs", FAQViewSet, basename="faq")
+router.register(r"contact-messages", ContactMessageViewSet, basename="contact-message")
+
 
 urlpatterns = [
     path("", include(router.urls)),
