@@ -1,89 +1,26 @@
-from rest_framework import serializers
-from rest_framework.serializers import PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer
 
 from cms.models.gallery import Gallery
-from cms.models.gallery import GalleryCategory
+from cms.serializers.gallery_category_serializer import GalleryCategoryListSerializer
 
 
-class GalleryCategorySerializer(serializers.ModelSerializer):
-    """
-    Serializer for GalleryCategory model.
-    """
-
-    name = serializers.JSONField()
-    description = serializers.JSONField(required=False)
-
+class GallerySerializer(ModelSerializer):
     class Meta:
-        model = GalleryCategory
-        fields = [
-            "id",
-            "name",
-            "description",
-            "created_at",
-            "updated_at",
-        ]
+        model = Gallery
+        fields = "__all__"
 
 
-class GalleryCategoryResponseSerializer(serializers.ModelSerializer):
-    """
-    Response serializer for GalleryCategory model with translated fields.
-    """
-
-    name = serializers.CharField()
-    description = serializers.CharField(required=False)
-
-    class Meta:
-        model = GalleryCategory
-        fields = [
-            "id",
-            "name",
-            "description",
-            "created_at",
-            "updated_at",
-        ]
-
-
-class GallerySerializer(serializers.ModelSerializer):
-    """
-    Serializer for Gallery model.
-    """
-
-    name = serializers.JSONField()
-    description = serializers.JSONField(required=False)
-    category = PrimaryKeyRelatedField(queryset=GalleryCategory.objects.all())
+class GalleryResponseSerializer(ModelSerializer):
+    category = GalleryCategoryListSerializer()
 
     class Meta:
         model = Gallery
-        fields = [
-            "id",
-            "name",
-            "description",
-            "category",
-            "image",
-            "gallery_type",
-            "created_at",
-            "updated_at",
-        ]
+        fields = ["id", "image", "category", "video"]
 
 
-class GalleryResponseSerializer(serializers.ModelSerializer):
-    """
-    Response serializer for Gallery model with translated fields.
-    """
-
-    name = serializers.CharField()
-    description = serializers.CharField(required=False)
-    category = GalleryCategoryResponseSerializer()
+class GalleryListSerializer(ModelSerializer):
+    category = GalleryCategoryListSerializer()
 
     class Meta:
         model = Gallery
-        fields = [
-            "id",
-            "name",
-            "description",
-            "category",
-            "image",
-            "gallery_type",
-            "created_at",
-            "updated_at",
-        ]
+        fields = ["id", "image", "category", "video"]
