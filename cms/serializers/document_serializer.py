@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from cms.models import Document
-from cms.models import DocumentAccess
+from cms.models.module import Document
+from cms.models.module import DocumentAccess
 
 
 class DocumentSerializer(serializers.ModelSerializer):

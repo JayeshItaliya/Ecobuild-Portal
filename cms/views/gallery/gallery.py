@@ -3,30 +3,25 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
-from backend.utils import CustomPagination
-from cms.models.module import BlogPost
-from cms.serializers.blog_management import (
-    BlogManagementSerializer,
-    BlogResponseSerializer,
-)
+from cms.models.gallery import Gallery
+from cms.serializers.gallery_serializer import GalleryListSerializer
+from cms.serializers.gallery_serializer import GalleryResponseSerializer
+from cms.serializers.gallery_serializer import GallerySerializer
 
 
-class BaseBlogManagement:
-    queryset = BlogPost.objects.all()
-    list_serializer_class = BlogManagementSerializer
-    serializer_class = BlogManagementSerializer
-    response_serializer_class = BlogResponseSerializer
-    pagination_class = CustomPagination
+class BaseGalleryAPIView:
+    queryset = Gallery.objects.order_by("-created_at")
+    serializer_class = GallerySerializer
+    list_serializer_class = GalleryListSerializer
+    response_serializer_class = GalleryResponseSerializer
 
 
-class BlogManagementListCreateAPIVIew(BaseBlogManagement, ListCreateAPIView):
-
-    def get(self, request):
+class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
+    def get(self, request, *args, **kwargs):
         """
         Handles GET request to retrieve initiatives created by the authenticated user.
         Retrieves initiatives from the database, serializes them, and returns a response.
         """
-        # instance = self.get_filtered_queryset()
 
         # Apply search filter
         instance = self.get_queryset()
@@ -64,16 +59,15 @@ class BlogManagementListCreateAPIVIew(BaseBlogManagement, ListCreateAPIView):
         return Response(
             data={
                 "data": self.response_serializer_class(blog_post).data,
-                "message": "Blog created successfully.",
+                "message": "Gallery created successfully.",
             },
             status=status.HTTP_201_CREATED,
         )
 
 
-class BlogManagementRetrieveUpdateDestroyAPIView(
-    BaseBlogManagement, RetrieveUpdateDestroyAPIView
+class GalleryRetrieveUpdateDestroyAPIView(
+    BaseGalleryAPIView, RetrieveUpdateDestroyAPIView
 ):
-
     http_method_names = ["get", "patch", "delete"]
     # queryset = Measure.objects.select_related("measure_type", "created_by")
 
@@ -95,6 +89,9 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
         Validates incoming data, performs partial update, and returns a response.
         """
         instance = self.get_object()
+        # Debug: See what request.data contains
+        print("Request Data:", request.data)
+        print("FILES:", request.FILES)
         serializer = self.get_serializer(
             instance,
             data=request.data,
@@ -107,7 +104,7 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
         return Response(
             data={
                 "data": self.response_serializer_class(serializer.data).data,
-                "message": "Blog updated successfully.",
+                "message": "Gallery updated successfully.",
             },
             status=status.HTTP_200_OK,
         )
@@ -121,7 +118,7 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
         instance.delete(self.request.user)
         return Response(
             data={
-                "message": "Blog deleted successfully.",
+                "message": "Gallery deleted successfully.",
             },
             status=status.HTTP_204_NO_CONTENT,
         )
