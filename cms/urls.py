@@ -8,7 +8,7 @@ from cms.views.document import DocumentAccessViewSet
 from cms.views.document import DocumentViewSet
 from cms.views.gallery.gallery import GalleryListAPIView
 from cms.views.gallery.gallery import GalleryRetrieveUpdateDestroyAPIView
-from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
+from cms.views.gallery.gallery_category import   GalleryCategoryChoicesAPIView, GalleryCategoryListCreateAPIView
 from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
@@ -50,5 +50,10 @@ urlpatterns = [
         "gallery/<str:pk>/",
         GalleryRetrieveUpdateDestroyAPIView.as_view(),
         name="gallery-retrive-update-delete",
+    ),
+    path(
+        "gallery-category-choices/",
+        GalleryCategoryChoicesAPIView.as_view(),
+        name="gallery-category-choices",
     ),
 ]

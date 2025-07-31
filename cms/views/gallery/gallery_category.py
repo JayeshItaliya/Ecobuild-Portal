@@ -1,11 +1,15 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from cms.models.gallery import GalleryCategory
-from cms.serializers.gallery_category_serializer import GalleryCategoryListSerializer
+
+from cms.serializers.gallery_category_serializer import (
+    GalleryCategoryChoicesSerializer,
+    GalleryCategoryListSerializer,
+)
 from cms.serializers.gallery_category_serializer import (
     GalleryCategoryResponseSerializer,
 )
@@ -124,3 +128,35 @@ class GalleryCategoryRetrieveUpdateDestroyAPIView(
             },
             status=status.HTTP_204_NO_CONTENT,
         )
+
+
+class GalleryCategoryChoicesAPIView(TranslatedResponseMixin, ListAPIView):
+    """
+    API view to list gallery category choices.
+    It uses the GalleryCategoryChoicesSerializer to serialize the data.
+    """
+
+    queryset = GalleryCategory.objects.all()
+    serializer_class = GalleryCategoryChoicesSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        # if user.is_anonymous:
+        #     return self.queryset.none()
+        type = self.request.query_params.get("type", "Image")
+        if type:
+            self.queryset = self.queryset.filter(type=type)
+
+        return self.queryset
+
+    def get(self, request):
+        """
+        Handle GET requests to retrieve all user roles.
+        Returns:
+            Response: A DRF Response object containing serialized role data.
+        """
+        queryset = self.get_queryset()
+        lang_code = self.get_language_code(request)
+        translated_queryset = self.translate_queryset(queryset, lang_code)
+        serializer = self.serializer_class(translated_queryset, many=True)
+        return Response(serializer.data)
