@@ -6,9 +6,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from cms.models import ContactMessage
-from cms.serializers import ContactMessageListSerializer
-from cms.serializers import ContactMessageSerializer
+from cms.models.module import ContactMessage
+from cms.serializers.contact_serializer import ContactMessageListSerializer
+from cms.serializers.contact_serializer import ContactMessageSerializer
 
 
 class ContactMessageViewSet(viewsets.ModelViewSet):

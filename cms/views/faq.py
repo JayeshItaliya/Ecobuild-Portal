@@ -6,7 +6,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 
 from backend.utils import CustomPagination
-from cms.models import FAQ
+from cms.models.module import FAQ
 from cms.serializers.faq_serializer import FAQListSerializer
 from cms.serializers.faq_serializer import FAQSerializer
 
