@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django.db.models import JSONField
 from django.utils.text import slugify
 
@@ -252,3 +252,55 @@ class BlogPost(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class ContactMessage(BaseTranslatableModel):
+    name = models.CharField(
+        max_length=100, help_text="Name of the person sending the message"
+    )
+    email = models.EmailField(help_text="Email address for contact")
+    phone = models.CharField(
+        max_length=20, blank=True, help_text="Phone number (optional)"
+    )
+    subject = models.CharField(max_length=255, help_text="Subject of the message")
+    message = models.TextField(help_text="Content of the message")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(
+        default=False, help_text="Whether the message has been read"
+    )
+
+    TRANSLATABLE_FIELDS = ["name", "subject", "message"]
+
+    def __str__(self):
+        return f"Message from {self.name}"
+
+    class Meta:
+        db_table = "contact_message"  # Lowercase for consistency
+        verbose_name = "Contact Message"
+        verbose_name_plural = "Contact Messages"  # Title case for consistency
+        ordering = ["-created_at"]  # Most recent messages first
+
+
+class FAQ(BaseTranslatableModel):
+    question = models.CharField(
+        max_length=255, help_text="The frequently asked question"
+    )
+    answer = models.TextField(help_text="The answer to the question")
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(
+        default=True, help_text="Whether this FAQ is currently displayed"
+    )
+    order = models.PositiveIntegerField(
+        default=0, help_text="Display order (lower numbers appear first)"
+    )
+
+    TRANSLATABLE_FIELDS = ["question", "answer"]
+
+    def __str__(self):
+        return self.question
+
+    class Meta:
+        db_table = "faq"
+        verbose_name = "FAQ"
+        verbose_name_plural = "FAQs"  # Uppercase for acronym
+        ordering = ["order", "created_at"]  # Order by position, then by creation date
