@@ -4,11 +4,10 @@ from .models.module import FAQ
 from .models.module import ContactMessage
 from .models.module import Product
 
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
-    ordering = ("id",)
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = ("id", "name", "description")
+#     ordering = ("id",)
 
 
 @admin.register(FAQ)
