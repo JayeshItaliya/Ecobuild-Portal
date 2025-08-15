@@ -5,6 +5,7 @@ Django settings for backend project.
 import os
 from datetime import timedelta
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,6 +43,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "drf_yasg",
     "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
 ]
 
 INHOUSE_APPS = [
@@ -142,7 +144,9 @@ else:
 
 # PASSWORD VALIDATORS
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
