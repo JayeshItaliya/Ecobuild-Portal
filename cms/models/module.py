@@ -255,15 +255,13 @@ class BlogPost(BaseModel):
 
 
 class ContactMessage(BaseTranslatableModel):
-    name = models.CharField(
-        max_length=100, help_text="Name of the person sending the message"
-    )
+    name = JSONField(default=dict, help_text="Name of the person sending the message")
     email = models.EmailField(help_text="Email address for contact")
     phone = models.CharField(
         max_length=20, blank=True, help_text="Phone number (optional)"
     )
-    subject = models.CharField(max_length=255, help_text="Subject of the message")
-    message = models.TextField(help_text="Content of the message")
+    subject = JSONField(default=dict, help_text="Subject of the message")
+    message = JSONField(default=dict, help_text="Content of the message")
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(
         default=False, help_text="Whether the message has been read"
@@ -272,20 +270,22 @@ class ContactMessage(BaseTranslatableModel):
     TRANSLATABLE_FIELDS = ["name", "subject", "message"]
 
     def __str__(self):
-        return f"Message from {self.name}"
+        if isinstance(self.name, dict):
+            return self.name.get("en") or next(
+                iter(self.name.values()), "Unnamed Contact"
+            )
+        return str(self.name)
 
     class Meta:
-        db_table = "contact_message"  # Lowercase for consistency
+        db_table = "contact_message"
         verbose_name = "Contact Message"
-        verbose_name_plural = "Contact Messages"  # Title case for consistency
-        ordering = ["-created_at"]  # Most recent messages first
+        verbose_name_plural = "Contact Messages"
+        ordering = ["-created_at"]
 
 
 class FAQ(BaseTranslatableModel):
-    question = models.CharField(
-        max_length=255, help_text="The frequently asked question"
-    )
-    answer = models.TextField(help_text="The answer to the question")
+    question = JSONField(default=dict, help_text="The frequently asked question")
+    answer = JSONField(default=dict, help_text="The answer to the question")
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(
         default=True, help_text="Whether this FAQ is currently displayed"
@@ -297,10 +297,14 @@ class FAQ(BaseTranslatableModel):
     TRANSLATABLE_FIELDS = ["question", "answer"]
 
     def __str__(self):
-        return self.question
+        if isinstance(self.question, dict):
+            return self.question.get("en") or next(
+                iter(self.question.values()), "Unnamed FAQ"
+            )
+        return str(self.question)
 
     class Meta:
         db_table = "faq"
         verbose_name = "FAQ"
-        verbose_name_plural = "FAQs"  # Uppercase for acronym
-        ordering = ["order", "created_at"]  # Order by position, then by creation date
+        verbose_name_plural = "FAQs"
+        ordering = ["order", "created_at"]

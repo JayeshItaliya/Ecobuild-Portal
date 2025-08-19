@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models.module import FAQ
+from .models.module import ContactMessage
 from .models.module import Product
 
 
@@ -13,3 +14,8 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "order")
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "email")
