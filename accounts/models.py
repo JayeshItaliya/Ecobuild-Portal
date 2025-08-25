@@ -2,7 +2,8 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
 
-from backend.enums import ActionType, LoginMethodChoices
+from backend.enums import ActionType
+from backend.enums import LoginMethodChoices
 from backend.enums import UserRoleChoices
 from backend.enums import UserTypeChoices
 from backend.enums import VerificationStatusChoices
@@ -22,6 +23,60 @@ class Language(BaseModel):
         db_table = "language"
         verbose_name = "Language"
         verbose_name_plural = "Languages"
+
+
+class CompanyInfo(BaseTranslatableModel):
+    """Main company details shown in Contact Us / Footer."""
+
+    name = JSONField(default=dict)
+    address = JSONField(default=dict)
+    phone = models.CharField(max_length=50, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    description = JSONField(default=dict, blank=True, null=True)
+    weekday_hours = models.CharField(max_length=100, null=True, blank=True)
+    weekend_hours = models.CharField(max_length=100, null=True, blank=True)
+    logo = models.URLField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    TRANSLATABLE_FIELDS = ["name", "address", "description"]
+
+    class Meta:
+        db_table = "company_info"
+        verbose_name = "Company Info"
+        verbose_name_plural = "Company Info"
+
+    def __str__(self):
+        return self.name.get("en", "Unnamed Role")
+
+
+class SocialLink(models.Model):
+    PLATFORM_CHOICES = [
+        ("facebook", "Facebook"),
+        ("instagram", "Instagram"),
+        ("youtube", "YouTube"),
+        ("twitter", "Twitter"),
+        ("pinterest", "Pinterest"),
+        ("linkedin", "LinkedIn"),
+        ("other", "Other"),
+    ]
+
+    company = models.ForeignKey(
+        CompanyInfo, on_delete=models.CASCADE, related_name="social_links"
+    )
+    platform = models.CharField(max_length=50, choices=PLATFORM_CHOICES)
+    url = models.URLField()
+    icon = models.CharField(max_length=100, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "social_links"
+        ordering = ["order"]
+        verbose_name = "Social Link"
+        verbose_name_plural = "Social Links"
+
+    def __str__(self):
+        return f"{self.platform} - {self.company.name}"
 
 
 class User(AbstractBaseUser, BaseModel):

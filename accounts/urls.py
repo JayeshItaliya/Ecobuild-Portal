@@ -10,6 +10,8 @@ from accounts.views.account.password_view import ChangePasswordAPIView
 from accounts.views.account.password_view import ForgotPasswordView
 from accounts.views.account.password_view import PasswordResetConfirmAPIView
 from accounts.views.account.registration_views import SignupView
+from accounts.views.company_info import CompanyInfoCreateAPIView
+from accounts.views.company_info import CompanyInfoRetrieveUpdateAPIView
 from accounts.views.user.team_members import TeamMemberListAPIView
 from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
@@ -47,6 +49,14 @@ urlpatterns = [
         "role/<str:pk>/",
         RoleRetrieveUpdateDestroyAPIView.as_view(),
         name="role-detail",
+    ),
+    path(
+        "company-info/", CompanyInfoCreateAPIView.as_view(), name="company-info-create"
+    ),
+    path(
+        "company-info/<str:pk>/",
+        CompanyInfoRetrieveUpdateAPIView.as_view(),
+        name="company-info-retrieve-update",
     ),
     path(
         "google/login/",
