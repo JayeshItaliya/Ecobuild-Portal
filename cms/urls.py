@@ -17,6 +17,10 @@ from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
 from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
+from cms.views.product.product_category import ProductCategoryListCreateAPIView
+from cms.views.product.product_category import (
+    ProductCategoryRetrieveUpdateDestroyAPIView,
+)
 
 router = DefaultRouter()
 router.register(r"documents", DocumentViewSet, basename="document")
@@ -73,4 +77,14 @@ urlpatterns = [
     ),
     path("faq/", FAQListCreateAPIView.as_view(), name="faq-list-create"),
     path("faq/<str:pk>/", FAQRetrieveUpdateDestroyAPIView.as_view(), name="faq-detail"),
+    path(
+        "product-category/",
+        ProductCategoryListCreateAPIView.as_view(),
+        name="product-category-list-create",
+    ),
+    path(
+        "product-category/<str:pk>/",
+        ProductCategoryRetrieveUpdateDestroyAPIView.as_view(),
+        name="product-category-detail-update-delete",
+    ),
 ]

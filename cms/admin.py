@@ -2,13 +2,14 @@ from django.contrib import admin
 
 from .models.module import FAQ
 from .models.module import ContactMessage
-from .models.module import Product
+
+# from cms.models.product import Product
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
-    ordering = ("id",)
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = ("id", "name", "parent")
+#     ordering = ("id",)
 
 
 @admin.register(FAQ)

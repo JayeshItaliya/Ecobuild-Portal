@@ -43,35 +43,35 @@ class Course(BaseTranslatableModel):
         verbose_name_plural = "Courses"
 
 
-class ProductCategory(BaseTranslatableModel):
-    name = JSONField(default=dict)
-    description = JSONField(null=True, blank=True)
+# class ProductCategory(BaseTranslatableModel):
+#     name = JSONField(default=dict)
+#     description = JSONField(null=True, blank=True)
 
-    TRANSLATABLE_FIELDS = ["name", "description"]
+#     TRANSLATABLE_FIELDS = ["name", "description"]
 
-    def __str__(self):
-        return self.name.get("en", "Unnamed Category")
+#     def __str__(self):
+#         return self.name.get("en", "Unnamed Category")
 
-    class Meta:
-        db_table = "product_category"
-        verbose_name = "Product Category"
-        verbose_name_plural = "Product Categories"
+#     class Meta:
+#         db_table = "product_category"
+#         verbose_name = "Product Category"
+#         verbose_name_plural = "Product Categories"
 
 
-class Product(BaseTranslatableModel):
-    name = JSONField(default=dict)
-    description = JSONField(default=dict)
-    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
-    image = models.ImageField(upload_to="products/", null=True, blank=True)
+# class Product(BaseTranslatableModel):
+#     name = JSONField(default=dict)
+#     description = JSONField(default=dict)
+#     category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True)
+#     image = models.ImageField(upload_to="products/", null=True, blank=True)
 
-    TRANSLATABLE_FIELDS = ["name", "description"]
+#     TRANSLATABLE_FIELDS = ["name", "description"]
 
-    def __str__(self):
-        return self.name.get("en", "Unnamed Product")
+#     def __str__(self):
+#         return self.name.get("en", "Unnamed Product")
 
-    class Meta:
-        verbose_name = "Product"
-        verbose_name_plural = "Products"
+#     class Meta:
+#         verbose_name = "Product"
+#         verbose_name_plural = "Products"
 
 
 class ContentType(BaseTranslatableModel):

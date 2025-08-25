@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("accounts", "0001_initial"),
-        ("cms", "0001_initial"),
     ]
 
     operations = [
