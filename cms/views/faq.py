@@ -29,12 +29,12 @@ class BaseFAQAPIView(TranslatedResponseMixin):
 
 
 class FAQListCreateAPIView(BaseFAQAPIView, ListCreateAPIView):
+    """API view to list and create FAQs."""
+
     def get_permissions(self):
         if self.request.method in ["POST"]:
             return [IsAdminUser()]
         return [AllowAny()]
-
-    """API view to list and create FAQs."""
 
     def get(self, request, *args, **kwargs):
         """List all FAQs, filtered and translated as needed."""
@@ -71,12 +71,13 @@ class FAQListCreateAPIView(BaseFAQAPIView, ListCreateAPIView):
 
 
 class FAQRetrieveUpdateDestroyAPIView(BaseFAQAPIView, RetrieveUpdateDestroyAPIView):
+    """API view to retrieve, update, or delete a specific FAQ."""
+
     def get_permissions(self):
         if self.request.method in ["PATCH", "DELETE"]:
             return [IsAdminUser()]
         return [AllowAny()]
 
-    """API view to retrieve, update, or delete a specific FAQ."""
     http_method_names = ["get", "patch", "delete"]
 
     def get(self, request, *args, **kwargs):

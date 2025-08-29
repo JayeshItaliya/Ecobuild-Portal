@@ -121,7 +121,7 @@ class GalleryCategoryChoicesAPIView(TranslatedResponseMixin, ListAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        type_param = self.request.GET.get("type", "Image")
+        type_param = self.request.query_params.get("type", "Image")
         if type_param:
             queryset = queryset.filter(type=type_param)
         return queryset
