@@ -51,7 +51,9 @@ INHOUSE_APPS = [
     "cms",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
+
+# Add channels to installed apps
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS + ["channels"]
 
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
@@ -120,7 +122,11 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "backend.wsgi.application"
+
+# Channels ASGI application
+ASGI_APPLICATION = "backend.asgi.application"
+# Channels layer config (in-memory for dev)
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # DATABASE
 if os.getenv("DB_NAME"):
