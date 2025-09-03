@@ -9,32 +9,16 @@ from accounts.serializers.register import RegisterUserSerializer
 class SignupView(CreateAPIView):
     serializer_class = RegisterUserSerializer
 
-    def post(self, request):
-        """
-        Handle user sign-up request.
-
-        Args:
-            request: HTTP request object.
-
-        Returns:
-            Response indicating success or failure of user sign-up.
-        """
-        # Validate user data
-        serializer = self.serializer_class(data=request.data)
+    def post(self, request, *args, **kwargs):
+        """Handle user sign-up request."""
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         with transaction.atomic():
-            # new_generated_password = generate_password()
-            # new_generated_password = "password"
-            serializer.save(
-                # password=new_generated_password,
-            )
-            # Save user data
-
-        # Return successful response with user data, refresh token, and access token
+            user = serializer.save()
         return Response(
-            data={
+            {
+                "data": self.get_serializer(user).data,
                 "message": "Registration successful. Your account is pending verification. You'll be notified once approved. Thank you for joining us.",
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
         )

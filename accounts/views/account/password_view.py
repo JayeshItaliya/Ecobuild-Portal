@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
+from accounts.models import User
 from accounts.serializers.password import ChangePasswordSerializer
 from accounts.serializers.password import ForgotPasswordSerializer
 from accounts.serializers.password import ResetPasswordSerializer
@@ -60,59 +61,60 @@ class ForgotPasswordView(CreateAPIView):
         Handle POST requests for forgot password functionality.
 
         Returns:
-            Response indicating success or failure of forgot password request.
+            Response indicating success of forgot password request.
         """
-        # Deserialize the request data using the serializer
 
+        # Deserialize and validate request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get("email")
 
-        # Extract email from validated data
-        email = serializer.validated_data["email"]
-        email = email if email else None
+        if not email:
+            return Response(
+                {"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response(
-                {"message": "User not found."}, status=status.HTTP_404_NOT_FOUND
+
+            # Generate password reset token (valid for 10 minutes)
+            payload = {
+                "email": email,
+                "exp": datetime.datetime.now(datetime.timezone.utc)
+                + datetime.timedelta(minutes=10),
+            }
+            token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+            # Build reset URL (use settings for domain if available)
+            domain = getattr(settings, "FRONTEND_DOMAIN", "http://127.0.0.1:8000")
+            reset_url = f"{domain}/reset-password/{token}"
+
+            # Prepare email data
+            email_data = {
+                "email_body": "",  # You can add plain text fallback here
+                "to_email": user.email,
+                "email_subject": "Password Reset",
+            }
+
+            # Send reset email (HTML template + context)
+            Utils.send_email(
+                email_data,
+                # "password_reset_email.html",
+                {
+                    "user_name": getattr(user, "full_name", "User"),
+                    "reset_url": reset_url,
+                },
             )
-        payload = {
-            "email": email,
-            "exp": datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(minutes=10),
-        }
 
-        # Generate JWT token for password reset link using the email
-        token = jwt.encode(
-            payload,
-            settings.SECRET_KEY,
-            algorithm="HS256",
-        )
+        except User.DoesNotExist:
+            # Do nothing if user doesn't exist
+            pass
 
-        # Construct password reset URL using the generated token
-        reset_url = f"http://127.0.0.1:8000/reset-password/{token}"
-
-        # Prepare email data for sending password reset email
-        email_data = {
-            "email_body": "",  # Add email body content if necessary
-            "to_email": user.email,
-            "email_subject": "Password Reset",
-        }
-
-        # Send email containing the password reset link
-        Utils.send_email(
-            email_data,
-            # "password_reset_email.html",  # HTML template for the email
-            {
-                "user_name": user.full_name if user.full_name else "User",
-                "reset_url": reset_url,
-            },  # Additional context data for the template
-        )
-
-        # Return success response indicating that reset link has been sent to the user's email
+        # Always return a generic response
         return Response(
-            {"message": "Password reset link has been sent to your email."},
+            {
+                "message": "If this email exists in our system, a reset link has been sent."
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -120,55 +122,24 @@ class ForgotPasswordView(CreateAPIView):
 class PasswordResetConfirmAPIView(CreateAPIView):
     """
     View for handling password reset confirmation.
-
-    This endpoint is used to confirm a password reset by setting the new password
-    provided in the request data.
-
+    This endpoint is used to confirm a password reset by setting the new password provided in the request data.
     """
 
     serializer_class = ResetPasswordSerializer
 
     def create(self, request, *args, **kwargs):
-        """
-        Handle POST requests to process password reset form submission.
-
-        Args:
-            request: The HTTP request.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments. Expected to contain the token.
-
-        Returns:
-            Response: HTTP response indicating success or failure of password reset.
-
-        """
-        # Extract the token from URL kwargs
+        """Handle POST requests to process password reset form submission."""
         token = kwargs.get("token")
-
-        # Initialize the serializer with request data
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         try:
-            # Validate the token and retrieve the associated user
             user = token_validation(token)
-
-            # Extract the new password from the validated data
             password = serializer.validated_data["password"]
-
-            # Set the new password for the user
             user.set_password(password)
-
-            # Save the updated user details
             user.save()
-
-            # Return success response
             return Response(
                 {"message": "User password has been set successfully."},
                 status=status.HTTP_200_OK,
             )
         except ValidationError as e:
-            # Return error response if validation fails
-            return Response(
-                {"message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

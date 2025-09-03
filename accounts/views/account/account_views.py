@@ -15,11 +15,12 @@ class SigninView(TokenObtainPairView):
     serializer_class = SignInUserSerializer
 
     def post(self, request, *args, **kwargs):
-        # Use the TokenObtainPairSerializer to validate the request data
+        """Authenticate user and return JWT tokens."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        # Optionally check verification status here
 
-        serializer.user.verification_status
+        # serializer.user.verification_status
 
         # if verification_status == VerificationStatusChoices.PENDING:
         #     message = "Your account is pending verification. Please wait for approval before logging in. Thank you for your patience."
@@ -32,17 +33,15 @@ class SigninView(TokenObtainPairView):
         #         data={"message": message}, status=status.HTTP_401_UNAUTHORIZED
         #     )
 
-        # Get the token data from the superclass method
         token_data = serializer.validated_data
-
-        # Add the user's name to the response data
         response_data = {
-            "access": token_data["access"],
-            "refresh": token_data["refresh"],
+            "data": {
+                "access": token_data["access"],
+                "refresh": token_data["refresh"],
+            },
+            "message": "Sign in successful.",
         }
-
-        # Return the response with the access and refresh tokens, along with the user's role
-        return Response(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class LogoutAPIView(CreateAPIView):
@@ -53,16 +52,9 @@ class LogoutAPIView(CreateAPIView):
     serializer_class = LogoutSerializer
 
     def create(self, request, *args, **kwargs):
-        """
-        Handle POST requests to invalidate the refresh token and log the user out.
-
-        Returns:
-            Response: JSON response indicating the success or failure of the logout operation.
-        """
+        """Handle POST requests to invalidate the refresh token and log the user out."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Return success response
         return Response(
             {"message": "User successfully logged out."}, status=status.HTTP_200_OK
         )

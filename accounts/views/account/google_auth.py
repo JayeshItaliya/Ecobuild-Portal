@@ -52,7 +52,7 @@ class GoogleAuthCallBack(APIView):
         code = request.query_params.get("code")
         if not code:
             return Response(
-                data={"message": "Authorization code is required."},
+                data={"error": "Authorization code is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -69,13 +69,11 @@ class GoogleAuthCallBack(APIView):
         try:
             token_res = requests.post(token_url, data=token_data).json()
             if "access_token" not in token_res:
-                raise ValueError({"message": "Access token not found in response"})
-
+                raise ValueError({"error": "Access token not found in response"})
             access_token = token_res["access_token"]
-
         except requests.exceptions.RequestException:
             return Response(
-                data={"message": "Failed to retrieve access token from Google."},
+                data={"error": "Failed to retrieve access token from Google."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -89,12 +87,10 @@ class GoogleAuthCallBack(APIView):
             ).json()
             if "email" not in user_info_res:
                 raise ValueError(
-                    {"message": "Failed to retrieve required user information."}
+                    {"error": "Failed to retrieve required user information."}
                 )
-
             email = user_info_res["email"]
             google_account_id = user_info_res["sub"]
-
             first_name = user_info_res.get("given_name")
             last_name = user_info_res.get("family_name")
             name = (
@@ -102,7 +98,7 @@ class GoogleAuthCallBack(APIView):
             )
         except requests.exceptions.RequestException:
             return Response(
-                data={"message": "Failed to retrieve user information from Google."},
+                data={"error": "Failed to retrieve user information from Google."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

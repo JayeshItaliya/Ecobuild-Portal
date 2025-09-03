@@ -16,6 +16,10 @@ from cms.serializers.contact_serializer import ContactMessageSerializer
 
 
 class BaseContactMessageAPIView(TranslatedResponseMixin):
+    """
+    Base API view for Contact Message, provides queryset, serializer, and permissions.
+    """
+
     queryset = ContactMessage.objects.all().order_by("-created_at")
     serializer_class = ContactMessageSerializer
     response_serializer_class = ContactMessageListSerializer
@@ -25,21 +29,27 @@ class BaseContactMessageAPIView(TranslatedResponseMixin):
     search_fields = ["name", "email", "subject", "message"]
     ordering_fields = ["created_at", "name", "email", "subject", "is_read"]
 
+
+class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIView):
+    """API view to list and create contact messages."""
+
     def get_permissions(self):
         return [AllowAny()] if self.request.method == "POST" else [IsAuthenticated()]
 
-
-class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIView):
     def get(self, request, *args, **kwargs):
+        """List all contact messages, filtered and translated as needed."""
         lang_code = self.get_language_code(request)
         queryset = self.filter_queryset(self.get_queryset())
-
         page = self.paginate_queryset(queryset)
         if page is not None:
             page = self.translate_queryset(page, lang_code)
             serializer = self.response_serializer_class(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
+            return self.get_paginated_response(
+                {
+                    "data": serializer.data,
+                    "message": "Contact messages retrieved successfully.",
+                }
+            )
         queryset = self.translate_queryset(queryset, lang_code)
         serializer = self.response_serializer_class(queryset, many=True)
         return Response(
@@ -51,7 +61,8 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
         )
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+        """Create a new contact message."""
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return Response(
@@ -66,9 +77,12 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
 class ContactMessageRetrieveUpdateDestroyAPIView(
     BaseContactMessageAPIView, RetrieveUpdateDestroyAPIView
 ):
+    """API view to retrieve, update, or delete a specific contact message."""
+
     http_method_names = ["get", "patch", "delete"]
 
     def get(self, request, *args, **kwargs):
+        """Retrieve a specific contact message."""
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
         serializer = self.response_serializer_class(instance)
@@ -81,12 +95,9 @@ class ContactMessageRetrieveUpdateDestroyAPIView(
         )
 
     def patch(self, request, *args, **kwargs):
+        """Partially update a specific contact message."""
         instance = self.get_object()
-        serializer = self.serializer_class(
-            instance,
-            data=request.data,
-            partial=True,
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
         return Response(
@@ -98,6 +109,7 @@ class ContactMessageRetrieveUpdateDestroyAPIView(
         )
 
     def delete(self, request, *args, **kwargs):
+        """Delete a specific contact message."""
         instance = self.get_object()
         instance.delete()
         return Response(
