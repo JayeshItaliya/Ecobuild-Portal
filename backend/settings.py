@@ -44,6 +44,7 @@ THIRD_PARTY_APPS = [
     "drf_yasg",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
+    "channels",
 ]
 
 INHOUSE_APPS = [
@@ -53,7 +54,7 @@ INHOUSE_APPS = [
 
 
 # Add channels to installed apps
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS + ["channels"]
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
