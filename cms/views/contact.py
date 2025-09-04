@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
 from cms.models.module import ContactMessage
+from cms.models.notification import AdminNotification
 from cms.serializers.contact_serializer import ContactMessageListSerializer
 from cms.serializers.contact_serializer import ContactMessageSerializer
 
@@ -61,10 +62,38 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
         )
 
     def post(self, request, *args, **kwargs):
-        """Create a new contact message."""
+        """Create a new contact message and notify admin."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
+
+        # Create admin notification
+        name = request.data.get("name", "")
+        subject = request.data.get("subject", "")
+        message = f"New contact message from {name}: {subject}"
+
+        notification = AdminNotification.objects.create(
+            message=message, contact_message=instance
+        )
+
+        # Send notification to WebSocket group
+        try:
+            from asgiref.sync import async_to_sync
+            from channels.layers import get_channel_layer
+
+            from cms.serializers.notification import AdminNotificationSerializer
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "admin_notifications",
+                {
+                    "type": "send_notification",
+                    "notification": AdminNotificationSerializer(notification).data,
+                },
+            )
+        except Exception:
+            pass  # Optionally log error
+
         return Response(
             {
                 "data": self.response_serializer_class(instance).data,

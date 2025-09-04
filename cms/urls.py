@@ -17,6 +17,7 @@ from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
 from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
+from cms.views.notification import AdminNotificationListAPIView
 from cms.views.product.product_category import ProductCategoryListCreateAPIView
 from cms.views.product.product_category import (
     ProductCategoryRetrieveUpdateDestroyAPIView,
@@ -27,6 +28,11 @@ router.register(r"documents", DocumentViewSet, basename="document")
 router.register(r"document-access", DocumentAccessViewSet, basename="document-access")
 
 urlpatterns = [
+    path(
+        "admin-notifications/",
+        AdminNotificationListAPIView.as_view(),
+        name="admin-notification-list",
+    ),
     path("", include(router.urls)),
     # Blog
     path(
