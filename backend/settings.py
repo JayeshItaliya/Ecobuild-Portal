@@ -109,11 +109,12 @@ else:
         if origin.strip()
     ]
 
-    CSRF_TRUSTED_ORIGINS = [
-        origin.strip()
-        for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
-        if origin.strip()
-    ] or CORS_ALLOWED_ORIGINS
+# Always set CSRF trusted origins (production requires it)
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 ROOT_URLCONF = "backend.urls"
 
