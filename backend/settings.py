@@ -52,8 +52,6 @@ INHOUSE_APPS = [
     "cms",
 ]
 
-
-# Add channels to installed apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 
 # Authentication Backends
