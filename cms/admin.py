@@ -1,7 +1,9 @@
 from django.contrib import admin
 
-from .models.module import FAQ
-from .models.module import ContactMessage
+from cms.models.faq import FAQ
+
+
+from .models.blog import ContactMessage
 
 # from cms.models.product import Product
 

@@ -2,9 +2,9 @@ from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from cms.models.module import BlogPost
-from cms.models.module import Category
-from cms.models.module import Tag
+from cms.models.blog import BlogPost
+from cms.models.blog import Category
+from cms.models.blog import Tag
 
 
 class TagResponseSerializer(ModelSerializer):

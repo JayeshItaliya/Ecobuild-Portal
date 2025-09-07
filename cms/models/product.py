@@ -1,16 +1,21 @@
 from django.db import models
 
 from backend.models import BaseTranslatableModel
-from cms.enums import IMAGE_POSITION_CHOICES
+from cms.enums import IMAGE_POSITION_CHOICES, ProductCategoryType
 from cms.enums import PAGE_SECTION_TYPES
 
 
 class ProductCategory(BaseTranslatableModel):
-    name = models.CharField(max_length=255)
+    name = models.JSONField(max_length=255)
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
     )
-
+    category_type = models.CharField(
+        max_length=50,
+        choices=ProductCategoryType.choices,
+        default=ProductCategoryType.PRODUCTS,
+    )
+    TRANSLATABLE_FIELDS = ["name"]
     def __str__(self):
         return self.name
 
@@ -21,14 +26,20 @@ class ProductCategory(BaseTranslatableModel):
 
 
 class Product(BaseTranslatableModel):
-    title = models.CharField(max_length=255)
-    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    title = models.JSONField(max_length=255)
+    subtitle = models.JSONField(max_length=255, blank=True, default={"text": ""})
     category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name="products"
     )
 
+    TRANSLATABLE_FIELDS = ["title", "subtitle"]
     def __str__(self):
         return self.title
+    
+    class Meta:
+        db_table = "product"
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
 
 
 class ProductSection(BaseTranslatableModel):
@@ -40,7 +51,7 @@ class ProductSection(BaseTranslatableModel):
     section_type = models.CharField(max_length=20, choices=PAGE_SECTION_TYPES.choices)
 
     # Shared fields
-    content_text = models.TextField(
+    content_text = models.JSONField(
         blank=True,
         null=True,
     )
@@ -62,7 +73,7 @@ class ProductSection(BaseTranslatableModel):
         default=IMAGE_POSITION_CHOICES.CENTER,
         blank=True,
     )
-
+    TRANSLATABLE_FIELDS = ["content_text"]
     class Meta:
         ordering = ["order"]
         db_table = "product_section"
@@ -76,3 +87,8 @@ class ProductGalleryImage(BaseTranslatableModel):
     )
     image = models.ImageField(upload_to="product_gallery/")
     caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "product_gallery_image"
+        verbose_name = "Product Gallery Image"
+        verbose_name_plural = "Product Gallery Images"

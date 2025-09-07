@@ -2,9 +2,9 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
 
+from accounts.enums import PlatformChoices
 from backend.enums import ActionType
 from backend.enums import LoginMethodChoices
-from backend.enums import UserRoleChoices
 from backend.enums import UserTypeChoices
 from backend.enums import VerificationStatusChoices
 from backend.models import BaseModel
@@ -36,7 +36,6 @@ class CompanyInfo(BaseTranslatableModel):
     weekday_hours = models.CharField(max_length=100, null=True, blank=True)
     weekend_hours = models.CharField(max_length=100, null=True, blank=True)
     logo = models.FileField(upload_to="company_logos/", null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     TRANSLATABLE_FIELDS = ["name", "address", "description"]
 
@@ -50,28 +49,16 @@ class CompanyInfo(BaseTranslatableModel):
 
 
 class SocialLink(models.Model):
-    PLATFORM_CHOICES = [
-        ("facebook", "Facebook"),
-        ("instagram", "Instagram"),
-        ("youtube", "YouTube"),
-        ("twitter", "Twitter"),
-        ("pinterest", "Pinterest"),
-        ("linkedin", "LinkedIn"),
-        ("other", "Other"),
-    ]
-
     company = models.ForeignKey(
         CompanyInfo, on_delete=models.CASCADE, related_name="social_links"
     )
-    platform = models.CharField(max_length=50, choices=PLATFORM_CHOICES)
+    platform = models.CharField(max_length=50, choices=PlatformChoices.choices)
     url = models.URLField()
     icon = models.CharField(max_length=100, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    order = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "social_links"
-        ordering = ["order"]
         verbose_name = "Social Link"
         verbose_name_plural = "Social Links"
 
@@ -81,10 +68,10 @@ class SocialLink(models.Model):
 
 class User(AbstractBaseUser, BaseModel):
     email = models.EmailField(max_length=255, unique=True, db_index=True)
-    role = models.CharField(
-        max_length=50, choices=UserRoleChoices.choices, default=UserRoleChoices.USER
+    role = models.ForeignKey(
+        "Role", on_delete=models.CASCADE
     )
-    full_name = models.CharField(max_length=50, null=True, blank=True)
+    full_name = models.JSONField(null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)
     user_type = models.CharField(
         max_length=50,
@@ -114,6 +101,7 @@ class User(AbstractBaseUser, BaseModel):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
+    TRANSLATABLE_FIELDS = ["full_name"]
     def __str__(self):
         return self.email
 
@@ -143,97 +131,11 @@ class Role(BaseTranslatableModel):
         verbose_name = "Role"
         verbose_name_plural = "Roles"
 
-
-class Professional(BaseTranslatableModel):
-    user = models.OneToOneField(
-        "User", on_delete=models.CASCADE, related_name="professional_profile"
-    )
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    email = models.EmailField()
-    phone = models.CharField(max_length=20)
-    company = models.ForeignKey(
-        "Company", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    role = models.ForeignKey("Role", on_delete=models.SET_NULL, null=True, blank=True)
-    profile_summary = JSONField(null=True, blank=True)
-    region = models.ForeignKey(
-        "Region", on_delete=models.SET_NULL, null=True, blank=True
-    )
-    specializations = JSONField(null=True, blank=True)
-
-    TRANSLATABLE_FIELDS = ["profile_summary", "specializations"]
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-
-    class Meta:
-        db_table = "professional"
-        verbose_name = "Professional"
-        verbose_name_plural = "Professionals"
-
-
-class Company(BaseTranslatableModel):
-    name = JSONField(default=dict)
-    industry_type = JSONField(null=True, blank=True)
-    website = models.URLField(null=True, blank=True)
-
-    TRANSLATABLE_FIELDS = ["name", "industry_type"]
-
-    def __str__(self):
-        return self.name.get("en", "Unnamed Company")
-
-    class Meta:
-        db_table = "mst_company"
-        verbose_name = "Company"
-        verbose_name_plural = "Companies"
-
-
-class Region(BaseTranslatableModel):
-    name = JSONField(default=dict)
-    country = models.ForeignKey("Country", on_delete=models.SET_NULL, null=True)
-    code = models.CharField(max_length=10, null=True, blank=True)
-
-    TRANSLATABLE_FIELDS = ["name"]
-
-    def __str__(self):
-        return self.name.get("en", "Unnamed Region")
-
-    class Meta:
-        db_table = "region"
-        verbose_name = "Region"
-        verbose_name_plural = "Regions"
-
-
-class Country(BaseTranslatableModel):
-    name = JSONField(default=dict)
-    code = models.CharField(max_length=10)
-    flag = models.ImageField(upload_to="flags/", null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    notes = JSONField(null=True, blank=True)
-
-    TRANSLATABLE_FIELDS = ["name", "notes"]
-
-    def __str__(self):
-        return self.name.get("en", "Unnamed Country")
-
-    class Meta:
-        db_table = "mst_country"
-        verbose_name = "Country"
-        verbose_name_plural = "Countries"
-
+ 
 
 class ActivityLog(BaseTranslatableModel):
     user = models.ForeignKey(
         "User",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="activity_logs",
-    )
-
-    module = models.ForeignKey(
-        "cms.Module",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -262,12 +164,4 @@ class ActivityLog(BaseTranslatableModel):
         verbose_name_plural = "Activity Logs"
 
 
-class UsageLog(BaseModel):
-    user = models.ForeignKey("User", on_delete=models.CASCADE)
-    session_id = models.CharField(max_length=255, null=True, blank=True)
-    response_time_ms = models.IntegerField()
-
-    class Meta:
-        db_table = "usage_log"
-        verbose_name = "Usage Log"
-        verbose_name_plural = "Usage Logs"
+ 

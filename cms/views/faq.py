@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
-from cms.models.module import FAQ
+from cms.models.faq import FAQ
 from cms.serializers.faq_serializer import FAQListSerializer
 from cms.serializers.faq_serializer import FAQSerializer
 

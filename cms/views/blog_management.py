@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from backend.utils import CustomPagination
-from cms.models.module import BlogPost
+from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
 from cms.serializers.blog_management import BlogResponseSerializer
 

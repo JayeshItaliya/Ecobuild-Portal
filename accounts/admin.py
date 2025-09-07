@@ -24,7 +24,7 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(ActivityLog)
 class ActivityLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "details", "action", "module", "time_stamp")
+    list_display = ("id", "user", "details", "action",  "time_stamp")
     ordering = ("-time_stamp",)
 
 

@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
-from cms.models.module import ContactMessage
+from cms.models.blog import ContactMessage
 from cms.models.notification import AdminNotification
 from cms.serializers.contact_serializer import ContactMessageListSerializer
 from cms.serializers.contact_serializer import ContactMessageSerializer

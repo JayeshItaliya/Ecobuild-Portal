@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
-from cms.models.module import FAQ
-
+from cms.models.faq import FAQ
 
 class FAQSerializer(serializers.ModelSerializer):
     """
