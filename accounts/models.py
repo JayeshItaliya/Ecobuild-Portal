@@ -68,9 +68,7 @@ class SocialLink(models.Model):
 
 class User(AbstractBaseUser, BaseModel):
     email = models.EmailField(max_length=255, unique=True, db_index=True)
-    role = models.ForeignKey(
-        "Role", on_delete=models.CASCADE
-    )
+    role = models.ForeignKey("Role", on_delete=models.CASCADE, null=True, blank=True)
     full_name = models.JSONField(null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)
     user_type = models.CharField(
@@ -102,6 +100,7 @@ class User(AbstractBaseUser, BaseModel):
     REQUIRED_FIELDS = []
 
     TRANSLATABLE_FIELDS = ["full_name"]
+
     def __str__(self):
         return self.email
 
@@ -131,7 +130,6 @@ class Role(BaseTranslatableModel):
         verbose_name = "Role"
         verbose_name_plural = "Roles"
 
- 
 
 class ActivityLog(BaseTranslatableModel):
     user = models.ForeignKey(
@@ -162,6 +160,3 @@ class ActivityLog(BaseTranslatableModel):
         db_table = "activity_log"
         verbose_name = "Activity Log"
         verbose_name_plural = "Activity Logs"
-
-
- 
