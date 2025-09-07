@@ -35,7 +35,7 @@ class CompanyInfo(BaseTranslatableModel):
     description = JSONField(default=dict, blank=True, null=True)
     weekday_hours = models.CharField(max_length=100, null=True, blank=True)
     weekend_hours = models.CharField(max_length=100, null=True, blank=True)
-    logo = models.URLField(null=True, blank=True)
+    logo = models.FileField(upload_to="company_logos/", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     TRANSLATABLE_FIELDS = ["name", "address", "description"]
@@ -96,7 +96,7 @@ class User(AbstractBaseUser, BaseModel):
         choices=LoginMethodChoices.choices,
         default=LoginMethodChoices.EMAIL,
     )
-    profile_image = models.URLField(null=True, blank=True)
+    profile_image = models.FileField(upload_to="profile_images/", null=True, blank=True)
     verification_status = models.CharField(
         max_length=20,
         choices=VerificationStatusChoices.choices,

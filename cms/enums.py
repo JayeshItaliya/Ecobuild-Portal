@@ -30,3 +30,8 @@ class PAGE_SECTION_TYPES(BaseStatusChoices):
     FILE = "File", "File"
     IMAGE_TEXT = "Image Text", "Image Text"
     VIDEO_URL = "Video URL", "Video URL"
+
+class ProductCategoryType(BaseStatusChoices):
+    PRODUCTS = "Products", "Products"
+    INFORMATION=  "Information", "Information"
+    DESIGN= "Design", "Design"

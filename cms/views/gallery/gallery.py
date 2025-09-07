@@ -9,7 +9,8 @@ from cms.serializers.gallery_serializer import GalleryListSerializer
 from cms.serializers.gallery_serializer import GalleryResponseSerializer
 from cms.serializers.gallery_serializer import GallerySerializer
 
-
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 class BaseGalleryAPIView:
     """
     Base API view for Gallery, provides queryset, serializer, and permissions.
@@ -38,6 +39,33 @@ class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
         )
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_description="Create a new gallery",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "image": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    format=openapi.FORMAT_BINARY,
+                    description="Upload an image file",
+                ),
+                "video": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    format=openapi.FORMAT_BINARY,
+                    description="Upload a video file",
+                ),
+                "category": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description="Category ID or name",
+                ),
+            },
+
+        ),
+        responses={status.HTTP_201_CREATED: openapi.Response(
+            description="Gallery created successfully",
+            schema=GalleryResponseSerializer(),
+        )},
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(
             data=request.data, context={"request": request}
