@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from cms.models.module import ContactMessage
+from cms.models.blog import ContactMessage
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):

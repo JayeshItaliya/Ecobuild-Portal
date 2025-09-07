@@ -30,8 +30,6 @@ class Gallery(BaseTranslatableModel):
     category = models.ForeignKey(GalleryCategory, on_delete=models.CASCADE)
     video = models.FileField(upload_to="gallery", null=True, blank=True)
 
-    # Optional: Add translatable fields here, if needed in the future
-    TRANSLATABLE_FIELDS = []
 
     class Meta:
         db_table = "gallery"
