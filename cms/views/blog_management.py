@@ -1,10 +1,14 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.filters import OrderingFilter
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from backend.utils import CustomPagination
+from cms.filters.filters import BlogPostFilter
 from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
 from cms.serializers.blog_management import BlogResponseSerializer
@@ -19,6 +23,15 @@ class BaseBlogManagement:
     response_serializer_class = BlogResponseSerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = BlogPostFilter
+    search_fields = [
+        "title",
+        "content",
+        "created_by__first_name",
+        "created_by__last_name",
+    ]
+    ordering_fields = ["created_at", "title", "updated_at", "is_active"]
 
 
 class BlogManagementListCreateAPIVIew(BaseBlogManagement, ListCreateAPIView):

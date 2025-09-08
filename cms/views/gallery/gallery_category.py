@@ -1,4 +1,7 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.filters import OrderingFilter
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -6,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
+from cms.filters.filters import GalleryCategoryFilter
 from cms.models.gallery import GalleryCategory
 from cms.serializers.gallery_category_serializer import GalleryCategoryChoicesSerializer
 from cms.serializers.gallery_category_serializer import GalleryCategoryListSerializer
@@ -23,6 +27,10 @@ class BaseGalleryCategory(TranslatedResponseMixin):
     list_serializer_class = GalleryCategoryListSerializer
     response_serializer_class = GalleryCategoryResponseSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = GalleryCategoryFilter
+    search_fields = ["name"]
+    ordering_fields = ["created_at", "name"]
 
 
 class GalleryCategoryListCreateAPIView(BaseGalleryCategory, ListCreateAPIView):

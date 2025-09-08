@@ -1,3 +1,6 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 
@@ -6,6 +9,7 @@ from accounts.serializers.team_member import TeamMembersListSerializer
 from backend.enums import ActionType
 from backend.utils import CustomPagination
 from backend.utils import create_audit_log
+from cms.filters.filters import TeamMemberFilter
 
 
 class BaseUserListAPIView(ListAPIView):
@@ -13,6 +17,10 @@ class BaseUserListAPIView(ListAPIView):
 
     queryset = User.objects.exclude(deleted_at__isnull=False)
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = TeamMemberFilter
+    search_fields = ["email", "first_name", "last_name"]
+    ordering_fields = ["email", "first_name", "last_name", "created_at"]
 
 
 class TeamMemberListAPIView(BaseUserListAPIView):
