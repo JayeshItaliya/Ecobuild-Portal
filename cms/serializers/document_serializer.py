@@ -1,8 +1,7 @@
-from xml.dom.minidom import Document
 from rest_framework import serializers
 
+from cms.models.document import Document
 from cms.models.document import DocumentAccess
-
 
 
 class DocumentSerializer(serializers.ModelSerializer):

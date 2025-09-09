@@ -1,16 +1,21 @@
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.filters import OrderingFilter
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
 from cms.serializers.gallery_serializer import GalleryResponseSerializer
 from cms.serializers.gallery_serializer import GallerySerializer
 
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+
 class BaseGalleryAPIView:
     """
     Base API view for Gallery, provides queryset, serializer, and permissions.
@@ -21,6 +26,9 @@ class BaseGalleryAPIView:
     list_serializer_class = GalleryListSerializer
     response_serializer_class = GalleryResponseSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = GalleryFilter
+    ordering_fields = ["created_at"]
 
 
 class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
@@ -59,12 +67,13 @@ class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
                     description="Category ID or name",
                 ),
             },
-
         ),
-        responses={status.HTTP_201_CREATED: openapi.Response(
-            description="Gallery created successfully",
-            schema=GalleryResponseSerializer(),
-        )},
+        responses={
+            status.HTTP_201_CREATED: openapi.Response(
+                description="Gallery created successfully",
+                schema=GalleryResponseSerializer(),
+            )
+        },
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(
