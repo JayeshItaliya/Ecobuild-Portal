@@ -10,6 +10,7 @@ class ProductCategoryChildSerializer(ModelSerializer):
 
 
 class ProductCategorySerializer(ModelSerializer):
+    """For creating/updating categories"""
 
     class Meta:
         model = ProductCategory
@@ -21,10 +22,7 @@ class ProductCategoryResponseSerializer(ModelSerializer):
 
     class Meta:
         model = ProductCategory
-        fields = ["id", "parent", "name"]
-
-    def get_parent(self, obj):
-        return obj.parent.name if obj.parent else None
+        fields = ["id", "name", "parent"]
 
 
 class ProductCategoryListSerializer(ModelSerializer):
