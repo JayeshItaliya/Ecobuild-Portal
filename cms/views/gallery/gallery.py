@@ -6,10 +6,12 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
+from backend.utils import CustomPagination
 from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
@@ -26,29 +28,42 @@ class BaseGalleryAPIView(TranslatedResponseMixin):
     serializer_class = GallerySerializer
     list_serializer_class = GalleryListSerializer
     response_serializer_class = GalleryResponseSerializer
-    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = GalleryFilter
     ordering_fields = ["created_at"]
 
 
-class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
+class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
     """API view to list and create galleries."""
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAdminUser()]
+        return [AllowAny()]
 
     def get(self, request, *args, **kwargs):
         lang_code = self.get_language_code(request)
         queryset = self.filter_queryset(self.get_queryset())
+
         page = self.paginate_queryset(queryset)
         if page is not None:
+            page = self.translate_queryset(page, lang_code)
             data = self.list_serializer_class(
                 page, many=True, context={"request": request}
             ).data
-            return self.get_paginated_response({"data": data})
+            response = self.get_paginated_response(data)
+            response.data["message"] = "Galleries fetched successfully"
+            return response
+
         queryset = self.translate_queryset(queryset, lang_code)
         serializer = self.list_serializer_class(
             queryset, many=True, context={"request": request}
         )
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(
+            {"data": serializer.data, "message": "Galleries fetched successfully"},
+            status=status.HTTP_200_OK,
+        )
 
     @swagger_auto_schema(
         operation_description="Create a new gallery",
@@ -100,11 +115,19 @@ class GalleryRetrieveUpdateDestroyAPIView(
 
     http_method_names = ["get", "patch", "delete"]
 
+    def get_permissions(self):
+        if self.request.method in ["PATCH", "DELETE"]:
+            return [IsAdminUser()]
+        return [AllowAny()]
+
     def get(self, request, *args, **kwargs):
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
         serializer = self.response_serializer_class(instance)
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(
+            {"data": serializer.data, "message": "Gallery fetched successfully"},
+            status=status.HTTP_200_OK,
+        )
 
     def patch(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -112,10 +135,10 @@ class GalleryRetrieveUpdateDestroyAPIView(
             instance, data=request.data, partial=True, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        updated_instance = serializer.save()
         return Response(
             {
-                "data": self.response_serializer_class(instance).data,
+                "data": self.response_serializer_class(updated_instance).data,
                 "message": "Gallery updated successfully.",
             },
             status=status.HTTP_200_OK,

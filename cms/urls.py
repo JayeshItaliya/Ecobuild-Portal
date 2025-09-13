@@ -10,7 +10,7 @@ from cms.views.document import DocumentAccessViewSet
 from cms.views.document import DocumentViewSet
 from cms.views.faq import FAQListCreateAPIView
 from cms.views.faq import FAQRetrieveUpdateDestroyAPIView
-from cms.views.gallery.gallery import GalleryListAPIView
+from cms.views.gallery.gallery import GalleryListCreateAPIView
 from cms.views.gallery.gallery import GalleryRetrieveUpdateDestroyAPIView
 from cms.views.gallery.gallery_category import GalleryCategoryChoicesAPIView
 from cms.views.gallery.gallery_category import GalleryCategoryListCreateAPIView
@@ -58,7 +58,7 @@ urlpatterns = [
     ),
     path(
         "gallery/",
-        GalleryListAPIView.as_view(),
+        GalleryListCreateAPIView.as_view(),
         name="gallery-list-crete",
     ),
     path(
