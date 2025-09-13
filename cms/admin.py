@@ -2,16 +2,10 @@ from django.contrib import admin
 
 from cms.models.faq import FAQ
 
-
 from .models.blog import ContactMessage
+from .models.product import ProductCategory
 
-# from cms.models.product import Product
-
-
-# @admin.register(Product)
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = ("id", "name", "parent")
-#     ordering = ("id",)
+admin.site.register(ProductCategory)
 
 
 @admin.register(FAQ)

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
 
 from cms.models.product import ProductCategory
 
@@ -17,29 +16,62 @@ class ProductCategoryChildSerializer(serializers.ModelSerializer):
         return obj.name.get(lang_code, next(iter(obj.name.values())))
 
 
-class ProductCategorySerializer(ModelSerializer):
-    """For creating/updating categories"""
+class ProductCategoryChildWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = ["id", "name"]
+
+
+class ProductCategorySerializer(serializers.ModelSerializer):
+    """For creating/updating categories with nested children"""
+
+    children = ProductCategoryChildWriteSerializer(many=True, required=False)
 
     class Meta:
         model = ProductCategory
-        fields = "__all__"
+        fields = ["id", "name", "parent", "category_type", "children"]
 
+    def create(self, validated_data):
+        children_data = validated_data.pop("children", [])
+        parent_category = ProductCategory.objects.create(**validated_data)
 
-class ProductCategoryResponseSerializer(ModelSerializer):
-    parent = ProductCategoryChildSerializer()
+        for child_data in children_data:
+            ProductCategory.objects.create(parent=parent_category, **child_data)
 
-    class Meta:
-        model = ProductCategory
-        fields = ["id", "name", "parent"]
+        return parent_category
+
+    def update(self, instance, validated_data):
+        children_data = validated_data.pop("children", [])
+
+        # update parent fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # handle children update (simple strategy: update if id exists, else create)
+        for child_data in children_data:
+            child_id = child_data.get("id", None)
+            if child_id:
+                try:
+                    child_instance = instance.children.get(id=child_id)
+                    for attr, value in child_data.items():
+                        setattr(child_instance, attr, value)
+                    child_instance.save()
+                except ProductCategory.DoesNotExist:
+                    continue
+            else:
+                ProductCategory.objects.create(parent=instance, **child_data)
+
+        return instance
 
 
 class ProductCategoryListSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
-    parent = ProductCategoryChildSerializer()
+    parent = ProductCategoryChildSerializer(allow_null=True)
 
     class Meta:
         model = ProductCategory
-        fields = ["id", "name", "parent", "children"]
+        fields = ["id", "name", "parent", "category_type", "children"]
 
     def get_children(self, obj):
         # Pass lang_code from context to each child for translation

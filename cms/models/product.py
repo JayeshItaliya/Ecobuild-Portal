@@ -1,8 +1,9 @@
 from django.db import models
 
 from backend.models import BaseTranslatableModel
-from cms.enums import IMAGE_POSITION_CHOICES, ProductCategoryType
+from cms.enums import IMAGE_POSITION_CHOICES
 from cms.enums import PAGE_SECTION_TYPES
+from cms.enums import ProductCategoryType
 
 
 class ProductCategory(BaseTranslatableModel):
@@ -16,8 +17,9 @@ class ProductCategory(BaseTranslatableModel):
         default=ProductCategoryType.PRODUCTS,
     )
     TRANSLATABLE_FIELDS = ["name"]
+
     def __str__(self):
-        return self.name
+        return self.name.get("en", "Unnamed Product Category")
 
     class Meta:
         db_table = "product_category"
@@ -33,9 +35,10 @@ class Product(BaseTranslatableModel):
     )
 
     TRANSLATABLE_FIELDS = ["title", "subtitle"]
+
     def __str__(self):
-        return self.title
-    
+        return self.title.get("en", "Unknown")
+
     class Meta:
         db_table = "product"
         verbose_name = "Product"
@@ -74,6 +77,7 @@ class ProductSection(BaseTranslatableModel):
         blank=True,
     )
     TRANSLATABLE_FIELDS = ["content_text"]
+
     class Meta:
         ordering = ["order"]
         db_table = "product_section"

@@ -15,9 +15,6 @@ from cms.serializers.product.product_category_serializer import (
     ProductCategoryListSerializer,
 )
 from cms.serializers.product.product_category_serializer import (
-    ProductCategoryResponseSerializer,
-)
-from cms.serializers.product.product_category_serializer import (
     ProductCategorySerializer,
 )
 
@@ -27,10 +24,14 @@ class BaseProductCategoryAPIView(TranslatedResponseMixin):
     Base API view for Product Category with queryset, serializers, and filters.
     """
 
-    queryset = ProductCategory.objects.all().order_by("-created_at")
+    queryset = (
+        ProductCategory.objects.all()
+        .prefetch_related("children")
+        .order_by("-created_at")
+    )
     serializer_class = ProductCategorySerializer
     list_serializer_class = ProductCategoryListSerializer
-    response_serializer_class = ProductCategoryResponseSerializer
+    response_serializer_class = ProductCategoryListSerializer
     pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["name"]
@@ -72,7 +73,7 @@ class ProductCategoryListCreateAPIView(BaseProductCategoryAPIView, ListCreateAPI
         response_data = self.response_serializer_class(category).data
         return generic_response(
             status_code=status.HTTP_201_CREATED,
-            message="Product category created successfully.",
+            message="Product category with children created successfully.",
             data=response_data,
         )
 
@@ -109,7 +110,7 @@ class ProductCategoryRetrieveUpdateDestroyAPIView(
         response_data = self.response_serializer_class(updated_instance).data
         return generic_response(
             status_code=status.HTTP_200_OK,
-            message="Product category updated successfully.",
+            message="Product category with children updated successfully.",
             data=response_data,
         )
 
