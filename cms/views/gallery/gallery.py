@@ -8,10 +8,10 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAdminUser
-from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
+from backend.utils import generic_response
 from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
@@ -47,22 +47,15 @@ class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
         queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
-        if page is not None:
-            page = self.translate_queryset(page, lang_code)
-            data = self.list_serializer_class(
-                page, many=True, context={"request": request, "lang_code": lang_code}
-            ).data
-            response = self.get_paginated_response(data)
-            response.data["message"] = "Galleries fetched successfully"
-            return response
-
-        queryset = self.translate_queryset(queryset, lang_code)
+        queryset = self.translate_queryset(page, lang_code)
         serializer = self.list_serializer_class(
-            queryset, many=True, context={"request": request}
+            queryset, many=True, context={"request": request, "lang_code": lang_code}
         )
-        return Response(
-            {"data": serializer.data, "message": "Galleries fetched successfully"},
-            status=status.HTTP_200_OK,
+        response_data = self.get_paginated_response(serializer.data).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Galleries fetched successfully",
+            data=response_data,
         )
 
     @swagger_auto_schema(
@@ -99,12 +92,11 @@ class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         gallery = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(gallery).data,
-                "message": "Gallery created successfully.",
-            },
-            status=status.HTTP_201_CREATED,
+        response_data = self.response_serializer_class(gallery).data
+        return generic_response(
+            status_code=status.HTTP_201_CREATED,
+            message="Gallery created successfully.",
+            data=response_data,
         )
 
 
@@ -123,10 +115,11 @@ class GalleryRetrieveUpdateDestroyAPIView(
     def get(self, request, *args, **kwargs):
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
-        serializer = self.response_serializer_class(instance)
-        return Response(
-            {"data": serializer.data, "message": "Gallery fetched successfully"},
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Gallery fetched successfully",
+            data=response_data,
         )
 
     def patch(self, request, *args, **kwargs):
@@ -136,18 +129,18 @@ class GalleryRetrieveUpdateDestroyAPIView(
         )
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(updated_instance).data,
-                "message": "Gallery updated successfully.",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(updated_instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Gallery updated successfully.",
+            data=response_data,
         )
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete(self.request.user)
-        return Response(
-            {"message": "Gallery deleted successfully."},
-            status=status.HTTP_204_NO_CONTENT,
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Gallery deleted successfully.",
+            data={},
         )

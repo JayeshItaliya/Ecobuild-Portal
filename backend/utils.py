@@ -1,7 +1,9 @@
 import jwt
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
 from accounts.models import ActivityLog
@@ -126,3 +128,32 @@ def create_audit_log(
     )
 
     return audit_log
+
+
+def generic_response(
+    data=None, message=None, error_message=None, status_code=status.HTTP_200_OK
+):
+    """
+    Generates a standardized HTTP response with a given status code, message, optional data, and
+    optional developer-specific error message.
+
+    Args:
+        status_code (int, optional): HTTP status code for the response. Defaults to 200 (OK).
+        message (str, optional): Message to include in the response body. Defaults to None.
+        data (any, optional): Additional data to include in the response body. Defaults to None.
+        dev_error_message (str, optional): A developer-specific error message for debugging.
+                                           Defaults to None.
+
+    Returns:
+        Response: A DRF (Django Rest Framework) Response object with 'statusCode', 'message',
+        'data', and optionally 'dev_error' fields.
+    """
+    response_body = {
+        "status_code": status_code,
+        "message": message,
+        "data": data,
+    }
+    # Only include the dev_error field if a message is provided
+    if error_message:
+        response_body["error"] = error_message
+    return Response(response_body, status=status_code)
