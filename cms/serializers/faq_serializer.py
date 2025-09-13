@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from cms.models.faq import FAQ
+
 
 class FAQSerializer(serializers.ModelSerializer):
     """
@@ -13,11 +15,10 @@ class FAQSerializer(serializers.ModelSerializer):
             "id",
             "question",
             "answer",
-            "created_at",
             "is_active",
-            "order",
+            "created_at",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "order"]
 
 
 class FAQListSerializer(serializers.ModelSerializer):
@@ -32,7 +33,6 @@ class FAQListSerializer(serializers.ModelSerializer):
             "id",
             "question",
             "answer",
-            "created_at",
             "is_active",
-            "order",
+            "created_at",
         ]
