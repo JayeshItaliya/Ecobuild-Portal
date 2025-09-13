@@ -9,6 +9,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.mixins import TranslatedResponseMixin
 from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
@@ -16,7 +17,7 @@ from cms.serializers.gallery_serializer import GalleryResponseSerializer
 from cms.serializers.gallery_serializer import GallerySerializer
 
 
-class BaseGalleryAPIView:
+class BaseGalleryAPIView(TranslatedResponseMixin):
     """
     Base API view for Gallery, provides queryset, serializer, and permissions.
     """
@@ -35,15 +36,17 @@ class GalleryListAPIView(BaseGalleryAPIView, ListCreateAPIView):
     """API view to list and create galleries."""
 
     def get(self, request, *args, **kwargs):
-        instance = self.get_queryset()
-        page = self.paginate_queryset(instance)
+        lang_code = self.get_language_code(request)
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
         if page is not None:
             data = self.list_serializer_class(
                 page, many=True, context={"request": request}
             ).data
             return self.get_paginated_response({"data": data})
+        queryset = self.translate_queryset(queryset, lang_code)
         serializer = self.list_serializer_class(
-            instance=instance, many=True, context={"request": request}
+            queryset, many=True, context={"request": request}
         )
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
@@ -98,7 +101,8 @@ class GalleryRetrieveUpdateDestroyAPIView(
     http_method_names = ["get", "patch", "delete"]
 
     def get(self, request, *args, **kwargs):
-        instance = self.get_object()
+        lang_code = self.get_language_code(request)
+        instance = self.translate_instance(self.get_object(), lang_code)
         serializer = self.response_serializer_class(instance)
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
