@@ -27,11 +27,15 @@ class GalleryCategoryListSerializer(ModelSerializer):
 
     def get_name(self, obj):
         lang_code = self.context.get("lang_code", "en")
-        return obj.name.get(lang_code, next(iter(obj.name.values())))
+        if isinstance(obj.name, dict):
+            return obj.name.get(lang_code, next(iter(obj.name.values())))
+        return obj.name
 
     def get_description(self, obj):
         lang_code = self.context.get("lang_code", "en")
-        return obj.description.get(lang_code, next(iter(obj.description.values())))
+        if isinstance(obj.description, dict):
+            return obj.description.get(lang_code, next(iter(obj.description.values())))
+        return obj.description
 
 
 class GalleryCategoryChoicesSerializer(BaseChoicesListSerializer):
