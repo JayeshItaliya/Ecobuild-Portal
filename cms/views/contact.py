@@ -6,10 +6,10 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
+from backend.utils import generic_response
 from cms.models.blog import ContactMessage
 from cms.models.notification import AdminNotification
 from cms.serializers.contact_serializer import ContactMessageListSerializer
@@ -41,24 +41,14 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
         """List all contact messages, filtered and translated as needed."""
         lang_code = self.get_language_code(request)
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            page = self.translate_queryset(page, lang_code)
-            serializer = self.response_serializer_class(page, many=True)
-            return self.get_paginated_response(
-                {
-                    "data": serializer.data,
-                    "message": "Contact messages retrieved successfully.",
-                }
-            )
+        queryset = self.paginate_queryset(queryset) or queryset
         queryset = self.translate_queryset(queryset, lang_code)
         serializer = self.response_serializer_class(queryset, many=True)
-        return Response(
-            {
-                "data": serializer.data,
-                "message": "Contact messages retrieved successfully.",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.get_paginated_response(serializer.data).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Contact messages retrieved successfully.",
+            data=response_data,
         )
 
     def post(self, request, *args, **kwargs):
@@ -66,6 +56,7 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
+        response_data = self.response_serializer_class(instance).data
 
         # Create admin notification
         name = request.data.get("name", "")
@@ -94,12 +85,10 @@ class ContactMessageListCreateAPIView(BaseContactMessageAPIView, ListCreateAPIVi
         except Exception:
             pass  # Optionally log error
 
-        return Response(
-            {
-                "data": self.response_serializer_class(instance).data,
-                "message": "Your message has been sent successfully.",
-            },
-            status=status.HTTP_201_CREATED,
+        return generic_response(
+            status_code=status.HTTP_201_CREATED,
+            message="Your message has been sent successfully.",
+            data=response_data,
         )
 
 
@@ -114,13 +103,11 @@ class ContactMessageRetrieveUpdateDestroyAPIView(
         """Retrieve a specific contact message."""
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
-        serializer = self.response_serializer_class(instance)
-        return Response(
-            {
-                "data": serializer.data,
-                "message": "Contact message retrieved successfully",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Contact message retrieved successfully",
+            data=response_data,
         )
 
     def patch(self, request, *args, **kwargs):
@@ -129,19 +116,18 @@ class ContactMessageRetrieveUpdateDestroyAPIView(
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(updated_instance).data,
-                "message": "Contact message updated successfully",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(updated_instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Contact message updated successfully",
+            data=response_data,
         )
 
     def delete(self, request, *args, **kwargs):
         """Delete a specific contact message."""
         instance = self.get_object()
         instance.delete()
-        return Response(
-            {"message": "Contact message deleted successfully"},
-            status=status.HTTP_204_NO_CONTENT,
+        return generic_response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            message="Contact message deleted successfully",
         )

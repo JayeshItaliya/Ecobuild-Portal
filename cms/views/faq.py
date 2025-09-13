@@ -6,10 +6,10 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAdminUser
-from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
+from backend.utils import generic_response
 from cms.filters.filters import FAQFilter
 from cms.models.faq import FAQ
 from cms.serializers.faq_serializer import FAQListSerializer
@@ -35,7 +35,7 @@ class FAQListCreateAPIView(BaseFAQAPIView, ListCreateAPIView):
     """API view to list and create FAQs."""
 
     def get_permissions(self):
-        if self.request.method in ["POST"]:
+        if self.request.method == "POST":
             return [IsAdminUser()]
         return [AllowAny()]
 
@@ -45,18 +45,16 @@ class FAQListCreateAPIView(BaseFAQAPIView, ListCreateAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         if not request.user.is_staff:
             queryset = queryset.filter(is_active=True)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            page = self.translate_queryset(page, lang_code)
-            data = self.response_serializer_class(page, many=True).data
-            return self.get_paginated_response(
-                {"data": data, "message": "FAQs fetched successfully"}
-            )
+
+        queryset = self.paginate_queryset(queryset) or queryset
         queryset = self.translate_queryset(queryset, lang_code)
+
         serializer = self.response_serializer_class(queryset, many=True)
-        return Response(
-            {"data": serializer.data, "message": "FAQs fetched successfully"},
-            status=status.HTTP_200_OK,
+        response_data = self.get_paginated_response(serializer.data).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="FAQs fetched successfully",
+            data=response_data,
         )
 
     def post(self, request, *args, **kwargs):
@@ -64,12 +62,11 @@ class FAQListCreateAPIView(BaseFAQAPIView, ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(instance).data,
-                "message": "FAQ created successfully",
-            },
-            status=status.HTTP_201_CREATED,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_201_CREATED,
+            message="FAQ created successfully",
+            data=response_data,
         )
 
 
@@ -87,10 +84,11 @@ class FAQRetrieveUpdateDestroyAPIView(BaseFAQAPIView, RetrieveUpdateDestroyAPIVi
         """Retrieve a specific FAQ."""
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
-        serializer = self.response_serializer_class(instance)
-        return Response(
-            {"data": serializer.data, "message": "FAQ fetched successfully"},
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="FAQ fetched successfully",
+            data=response_data,
         )
 
     def patch(self, request, *args, **kwargs):
@@ -99,18 +97,18 @@ class FAQRetrieveUpdateDestroyAPIView(BaseFAQAPIView, RetrieveUpdateDestroyAPIVi
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save(updated_by=request.user)
-        return Response(
-            {
-                "data": self.response_serializer_class(updated_instance).data,
-                "message": "FAQ updated successfully",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(updated_instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="FAQ updated successfully",
+            data=response_data,
         )
 
     def delete(self, request, *args, **kwargs):
         """Delete a specific FAQ."""
         instance = self.get_object()
         instance.delete(request.user)
-        return Response(
-            {"message": "FAQ deleted successfully"}, status=status.HTTP_204_NO_CONTENT
+        return generic_response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            message="FAQ deleted successfully",
         )

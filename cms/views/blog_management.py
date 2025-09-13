@@ -5,9 +5,9 @@ from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
 from backend.utils import CustomPagination
+from backend.utils import generic_response
 from cms.filters.filters import BlogPostFilter
 from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
@@ -34,21 +34,22 @@ class BaseBlogManagement:
     ordering_fields = ["created_at", "title", "updated_at", "is_active"]
 
 
-class BlogManagementListCreateAPIVIew(BaseBlogManagement, ListCreateAPIView):
+class BlogManagementListCreateAPIView(BaseBlogManagement, ListCreateAPIView):
     """API view to list and create blog posts."""
 
     def get(self, request, *args, **kwargs):
-        instance = self.get_queryset()
-        page = self.paginate_queryset(instance)
-        if page is not None:
-            data = self.list_serializer_class(
-                page, many=True, context={"request": request}
-            ).data
-            return self.get_paginated_response({"data": data})
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.paginate_queryset(queryset) or queryset
+
         serializer = self.list_serializer_class(
-            instance=instance, many=True, context={"request": request}
+            queryset, many=True, context={"request": request}
         )
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        response_data = self.get_paginated_response(serializer.data).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Blogs fetched successfully",
+            data=response_data,
+        )
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(
@@ -56,12 +57,11 @@ class BlogManagementListCreateAPIVIew(BaseBlogManagement, ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         blog_post = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(blog_post).data,
-                "message": "Blog created successfully.",
-            },
-            status=status.HTTP_201_CREATED,
+        response_data = self.response_serializer_class(blog_post).data
+        return generic_response(
+            status_code=status.HTTP_201_CREATED,
+            message="Blog created successfully.",
+            data=response_data,
         )
 
 
@@ -74,8 +74,12 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
 
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.response_serializer_class(instance)
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Blog fetched successfully",
+            data=response_data,
+        )
 
     def patch(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -84,17 +88,17 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(instance).data,
-                "message": "Blog updated successfully.",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Blog updated successfully.",
+            data=response_data,
         )
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete(self.request.user)
-        return Response(
-            {"message": "Blog deleted successfully."}, status=status.HTTP_204_NO_CONTENT
+        return generic_response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            message="Blog deleted successfully.",
         )

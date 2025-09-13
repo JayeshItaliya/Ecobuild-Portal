@@ -10,6 +10,7 @@ from accounts.models import User
 from accounts.utils import create_google_user
 from backend import settings
 from backend.enums import LoginMethodChoices
+from backend.utils import generic_response
 
 
 class GoogleLoginView(APIView):
@@ -51,9 +52,9 @@ class GoogleAuthCallBack(APIView):
         """
         code = request.query_params.get("code")
         if not code:
-            return Response(
-                data={"error": "Authorization code is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message="Authorization code is required.",
             )
 
         # Exchange the code for an access token
@@ -72,9 +73,9 @@ class GoogleAuthCallBack(APIView):
                 raise ValueError({"error": "Access token not found in response"})
             access_token = token_res["access_token"]
         except requests.exceptions.RequestException:
-            return Response(
-                data={"error": "Failed to retrieve access token from Google."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message="Failed to retrieve access token from Google.",
             )
 
         # Use the access token to fetch user info
@@ -97,9 +98,9 @@ class GoogleAuthCallBack(APIView):
                 f"{first_name} {last_name}" if first_name and last_name else first_name
             )
         except requests.exceptions.RequestException:
-            return Response(
-                data={"error": "Failed to retrieve user information from Google."},
-                status=status.HTTP_400_BAD_REQUEST,
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message="Failed to retrieve user information from Google.",
             )
 
         try:

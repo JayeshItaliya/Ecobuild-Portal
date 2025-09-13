@@ -2,7 +2,7 @@ from django.urls import include
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from cms.views.blog_management import BlogManagementListCreateAPIVIew
+from cms.views.blog_management import BlogManagementListCreateAPIView
 from cms.views.blog_management import BlogManagementRetrieveUpdateDestroyAPIView
 from cms.views.contact import ContactMessageListCreateAPIView
 from cms.views.contact import ContactMessageRetrieveUpdateDestroyAPIView
@@ -37,7 +37,7 @@ urlpatterns = [
     # Blog
     path(
         "blog-management/",
-        BlogManagementListCreateAPIVIew.as_view(),
+        BlogManagementListCreateAPIView.as_view(),
         name="blog-management",
     ),
     path(

@@ -6,10 +6,10 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAdminUser
-from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
+from backend.utils import generic_response
 from cms.models.product import ProductCategory
 from cms.serializers.product.product_category_serializer import (
     ProductCategoryListSerializer,
@@ -47,31 +47,20 @@ class ProductCategoryListCreateAPIView(BaseProductCategoryAPIView, ListCreateAPI
 
     def get(self, request, *args, **kwargs):
         lang_code = self.get_language_code(request)
-        queryset = self.filter_queryset(self.get_queryset())
 
-        # Only root categories
-        queryset = queryset.filter(parent__isnull=True)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            page = self.translate_queryset(page, lang_code)
-            data = self.list_serializer_class(
-                page, many=True, context={"request": request}
-            ).data
-            response = self.get_paginated_response(data)
-            response.data["message"] = "Product categories fetched successfully"
-            return response
-
+        queryset = self.filter_queryset(self.get_queryset()).filter(parent__isnull=True)
+        queryset = self.paginate_queryset(queryset) or queryset
         queryset = self.translate_queryset(queryset, lang_code)
+
         serializer = self.list_serializer_class(
             queryset, many=True, context={"request": request, "lang_code": lang_code}
         )
-        return Response(
-            {
-                "data": serializer.data,
-                "message": "Product categories fetched successfully",
-            },
-            status=status.HTTP_200_OK,
+
+        response_data = self.get_paginated_response(serializer.data).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Product categories fetched successfully",
+            data=response_data,
         )
 
     def post(self, request, *args, **kwargs):
@@ -80,12 +69,11 @@ class ProductCategoryListCreateAPIView(BaseProductCategoryAPIView, ListCreateAPI
         )
         serializer.is_valid(raise_exception=True)
         category = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(category).data,
-                "message": "Product category created successfully.",
-            },
-            status=status.HTTP_201_CREATED,
+        response_data = self.response_serializer_class(category).data
+        return generic_response(
+            status_code=status.HTTP_201_CREATED,
+            message="Product category created successfully.",
+            data=response_data,
         )
 
 
@@ -104,13 +92,11 @@ class ProductCategoryRetrieveUpdateDestroyAPIView(
     def get(self, request, *args, **kwargs):
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(self.get_object(), lang_code)
-        serializer = self.response_serializer_class(instance)
-        return Response(
-            {
-                "data": serializer.data,
-                "message": "Product category fetched successfully",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Product category fetched successfully",
+            data=response_data,
         )
 
     def patch(self, request, *args, **kwargs):
@@ -120,18 +106,17 @@ class ProductCategoryRetrieveUpdateDestroyAPIView(
         )
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        return Response(
-            {
-                "data": self.response_serializer_class(updated_instance).data,
-                "message": "Product category updated successfully.",
-            },
-            status=status.HTTP_200_OK,
+        response_data = self.response_serializer_class(updated_instance).data
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Product category updated successfully.",
+            data=response_data,
         )
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete(request.user)
-        return Response(
-            {"message": "Product category deleted successfully."},
-            status=status.HTTP_204_NO_CONTENT,
+        return generic_response(
+            status_code=status.HTTP_204_NO_CONTENT,
+            message="Product category deleted successfully.",
         )

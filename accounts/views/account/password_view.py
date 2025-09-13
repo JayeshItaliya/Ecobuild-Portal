@@ -6,13 +6,13 @@ from rest_framework import status
 from rest_framework.generics import CreateAPIView
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
 from accounts.models import User
 from accounts.serializers.password import ChangePasswordSerializer
 from accounts.serializers.password import ForgotPasswordSerializer
 from accounts.serializers.password import ResetPasswordSerializer
+from backend.utils import generic_response
 from backend.utils import token_validation
 
 
@@ -44,8 +44,9 @@ class ChangePasswordAPIView(UpdateAPIView):
         serializer = self.get_serializer(data=request.data)  # Get serializer instance
         serializer.is_valid(raise_exception=True)  # Validate the serializer data
         serializer.save()  # Save the updated password
-        return Response(
-            {"message": "Password changed successfully."}, status=status.HTTP_200_OK
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="Password changed successfully.",
         )
 
 
@@ -70,8 +71,9 @@ class ForgotPasswordView(CreateAPIView):
         email = serializer.validated_data.get("email")
 
         if not email:
-            return Response(
-                {"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message="Email is required.",
             )
 
         try:
@@ -111,11 +113,9 @@ class ForgotPasswordView(CreateAPIView):
             pass
 
         # Always return a generic response
-        return Response(
-            {
-                "message": "If this email exists in our system, a reset link has been sent."
-            },
-            status=status.HTTP_200_OK,
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="If this email exists in our system, a reset link has been sent.",
         )
 
 
@@ -137,9 +137,12 @@ class PasswordResetConfirmAPIView(CreateAPIView):
             password = serializer.validated_data["password"]
             user.set_password(password)
             user.save()
-            return Response(
-                {"message": "User password has been set successfully."},
-                status=status.HTTP_200_OK,
+            return generic_response(
+                status_code=status.HTTP_200_OK,
+                message="User password has been set successfully.",
             )
         except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message=str(e),
+            )

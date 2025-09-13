@@ -1,7 +1,6 @@
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.serializers import CharField
 from rest_framework.serializers import EmailField
 from rest_framework.serializers import ModelSerializer
@@ -9,6 +8,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 
 from accounts.models import User
+from backend.utils import generic_response
 from backend.utils import token_validation
 
 
@@ -79,13 +79,13 @@ class ValidateTokenAPIView(APIView):
             # Call the token_validation function to validate the token
             _ = token_validation(token)
             # Return success response if validation succeeds
-            return Response(
-                {"message": "Success"},
-                status=status.HTTP_200_OK,
+            return generic_response(
+                status_code=status.HTTP_200_OK,
+                message="Success",
             )
         except ValidationError as e:
             # Return error response if validation fails
-            return Response(
-                {"message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+            return generic_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_message=str(e),
             )

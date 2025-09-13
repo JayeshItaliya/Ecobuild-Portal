@@ -1,10 +1,10 @@
 from rest_framework import status
 from rest_framework.generics import CreateAPIView
-from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from accounts.serializers.sign_in_seralizer import LogoutSerializer
 from accounts.serializers.sign_in_seralizer import SignInUserSerializer
+from backend.utils import generic_response
 
 
 class SigninView(TokenObtainPairView):
@@ -41,7 +41,10 @@ class SigninView(TokenObtainPairView):
             },
             "message": "Sign in successful.",
         }
-        return Response(response_data, status=status.HTTP_200_OK)
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            data=response_data,
+        )
 
 
 class LogoutAPIView(CreateAPIView):
@@ -55,6 +58,7 @@ class LogoutAPIView(CreateAPIView):
         """Handle POST requests to invalidate the refresh token and log the user out."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(
-            {"message": "User successfully logged out."}, status=status.HTTP_200_OK
+        return generic_response(
+            status_code=status.HTTP_200_OK,
+            message="User successfully logged out.",
         )
