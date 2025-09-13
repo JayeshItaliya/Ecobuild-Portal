@@ -1,4 +1,3 @@
-from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
 from cms.models.gallery import GalleryCategory
@@ -18,22 +17,22 @@ class GalleryCategoryResponseSerializer(ModelSerializer):
 
 
 class GalleryCategoryListSerializer(ModelSerializer):
-    name = serializers.SerializerMethodField()
-    description = serializers.SerializerMethodField()
+    # name = serializers.SerializerMethodField()
+    # description = serializers.SerializerMethodField()
 
     class Meta:
         model = GalleryCategory
         fields = ["id", "name", "type", "description"]
 
-    def get_name(self, obj):
-        # Get language code from parent serializer context
-        lang_code = self.context.get("lang_code", "en")
-        return obj.name.get(lang_code, next(iter(obj.name.values())))
+    # def get_name(self, obj):
+    #     # Get language code from parent serializer context
+    #     lang_code = self.context.get("lang_code", "en")
+    #     return obj.name.get(lang_code, next(iter(obj.name.values())))
 
-    def get_description(self, obj):
-        # Get language code from parent serializer context
-        lang_code = self.context.get("lang_code", "en")
-        return obj.description.get(lang_code, next(iter(obj.description.values())))
+    # def get_description(self, obj):
+    #     # Get language code from parent serializer context
+    #     lang_code = self.context.get("lang_code", "en")
+    #     return obj.description.get(lang_code, next(iter(obj.description.values())))
 
 
 class GalleryCategoryChoicesSerializer(BaseChoicesListSerializer):
