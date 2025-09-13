@@ -50,7 +50,7 @@ class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
         if page is not None:
             page = self.translate_queryset(page, lang_code)
             data = self.list_serializer_class(
-                page, many=True, context={"request": request}
+                page, many=True, context={"request": request, "lang_code": lang_code}
             ).data
             response = self.get_paginated_response(data)
             response.data["message"] = "Galleries fetched successfully"

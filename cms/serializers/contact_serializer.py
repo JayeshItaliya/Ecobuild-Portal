@@ -36,7 +36,9 @@ class ContactMessageListSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "email",
+            "phone",
             "subject",
+            "message",
             "created_at",
             "is_read",
         ]
