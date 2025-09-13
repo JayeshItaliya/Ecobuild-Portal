@@ -8,6 +8,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from accounts.mixins import TranslatedResponseMixin
+from backend.utils import CustomPagination
 from backend.utils import generic_response
 from cms.filters.filters import GalleryCategoryFilter
 from cms.models.gallery import GalleryCategory
@@ -27,6 +28,7 @@ class BaseGalleryCategory(TranslatedResponseMixin):
     list_serializer_class = GalleryCategoryListSerializer
     response_serializer_class = GalleryCategoryResponseSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = GalleryCategoryFilter
     search_fields = ["name"]
