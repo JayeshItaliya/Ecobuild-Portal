@@ -64,7 +64,7 @@ class ProductCategoryListCreateAPIView(BaseProductCategoryAPIView, ListCreateAPI
 
         queryset = self.translate_queryset(queryset, lang_code)
         serializer = self.list_serializer_class(
-            queryset, many=True, context={"request": request}
+            queryset, many=True, context={"request": request, "lang_code": lang_code}
         )
         return Response(
             {
