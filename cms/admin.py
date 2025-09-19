@@ -11,7 +11,7 @@ from .models.product import (
 )
 
 
-@admin.site.register(ProductCategory)
+@admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "parent", "category_type")
 
