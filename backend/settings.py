@@ -50,7 +50,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "account.auth_backends.MasterPasswordBackend",
+    # "account.auth_backends.MasterPasswordBackend",
     # "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
