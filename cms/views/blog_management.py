@@ -18,13 +18,14 @@ class BaseBlogManagement:
     """Base API view for Blog Management, provides queryset, serializer, and permissions."""
 
     queryset = BlogPost.objects.all()
-    list_serializer_class = BlogManagementSerializer
     serializer_class = BlogManagementSerializer
     response_serializer_class = BlogResponseSerializer
+    
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = BlogPostFilter
+    
     search_fields = [
         "title",
         "content",
@@ -41,7 +42,7 @@ class BlogManagementListCreateAPIView(BaseBlogManagement, ListCreateAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.paginate_queryset(queryset) or queryset
 
-        serializer = self.list_serializer_class(
+        serializer = self.serializer_class(
             queryset, many=True, context={"request": request}
         )
         response_data = self.get_paginated_response(serializer.data).data
