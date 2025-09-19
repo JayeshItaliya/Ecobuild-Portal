@@ -68,7 +68,6 @@ class ProductSectionAdmin(admin.ModelAdmin):
         "section_type",
         "content_text",
         "content_image",
-        "content_video_url",
         "content_file",
         "image_position",
     )
