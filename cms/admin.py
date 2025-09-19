@@ -10,9 +10,8 @@ from .models.product import (
     ProductSection,
 )
 
-admin.site.register(ProductCategory)
 
-
+@admin.site.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "parent", "category_type")
 
