@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -29,7 +28,7 @@ class BaseGalleryAPIView(TranslatedResponseMixin):
     list_serializer_class = GalleryListSerializer
     response_serializer_class = GalleryResponseSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     filterset_class = GalleryFilter
     ordering_fields = ["created_at"]
 

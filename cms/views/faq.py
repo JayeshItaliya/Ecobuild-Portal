@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
@@ -25,7 +24,7 @@ class BaseFAQAPIView(TranslatedResponseMixin):
     serializer_class = FAQSerializer
     response_serializer_class = FAQListSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     filterset_class = FAQFilter
     search_fields = ["question", "answer"]
     ordering_fields = ["order", "created_at"]

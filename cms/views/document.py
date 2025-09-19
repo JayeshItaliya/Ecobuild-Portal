@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
 from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
@@ -16,7 +15,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     filterset_class = DocumentFilter
     search_fields = ["name"]
     ordering_fields = ["created_at", "name", "created_by"]

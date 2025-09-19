@@ -1,5 +1,4 @@
-﻿from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+﻿from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListCreateAPIView
@@ -25,7 +24,7 @@ class BaseContactMessageAPIView(TranslatedResponseMixin):
     serializer_class = ContactMessageSerializer
     response_serializer_class = ContactMessageListSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     filterset_fields = ["is_read"]
     search_fields = ["name", "email", "subject", "message"]
     ordering_fields = ["created_at", "name", "email", "subject", "is_read"]

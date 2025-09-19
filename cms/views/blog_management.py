@@ -1,4 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
@@ -23,7 +23,7 @@ class BaseBlogManagement:
     
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     filterset_class = BlogPostFilter
     
     search_fields = [

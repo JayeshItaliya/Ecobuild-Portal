@@ -1,4 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
@@ -17,7 +17,7 @@ class BaseUserListAPIView(ListAPIView):
 
     queryset = User.objects.exclude(deleted_at__isnull=False)
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [ SearchFilter, OrderingFilter]
     filterset_class = TeamMemberFilter
     search_fields = ["email", "first_name", "last_name"]
     ordering_fields = ["email", "first_name", "last_name", "created_at"]
