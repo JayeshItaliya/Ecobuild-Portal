@@ -1,4 +1,3 @@
-
 from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
@@ -8,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 
 from backend.utils import CustomPagination
 from backend.utils import generic_response
-from cms.filters.filters import BlogPostFilter
 from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
 from cms.serializers.blog_management import BlogResponseSerializer
@@ -20,12 +18,11 @@ class BaseBlogManagement:
     queryset = BlogPost.objects.all()
     serializer_class = BlogManagementSerializer
     response_serializer_class = BlogResponseSerializer
-    
+
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter]
-    filterset_class = BlogPostFilter
-    
+
     search_fields = [
         "title",
         "content",

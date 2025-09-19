@@ -9,7 +9,6 @@ from rest_framework.permissions import IsAdminUser
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
 from backend.utils import generic_response
-from cms.filters.filters import FAQFilter
 from cms.models.faq import FAQ
 from cms.serializers.faq_serializer import FAQListSerializer
 from cms.serializers.faq_serializer import FAQSerializer
@@ -25,7 +24,6 @@ class BaseFAQAPIView(TranslatedResponseMixin):
     response_serializer_class = FAQListSerializer
     pagination_class = CustomPagination
     filter_backends = [SearchFilter, OrderingFilter]
-    filterset_class = FAQFilter
     search_fields = ["question", "answer"]
     ordering_fields = ["order", "created_at"]
 

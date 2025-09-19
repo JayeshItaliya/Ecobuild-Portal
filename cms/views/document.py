@@ -3,7 +3,6 @@ from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 
-from cms.filters.filters import DocumentFilter
 from cms.models.document import Document
 from cms.models.document import DocumentAccess
 from cms.serializers.document_serializer import DocumentAccessSerializer
@@ -16,7 +15,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     filter_backends = [SearchFilter, OrderingFilter]
-    filterset_class = DocumentFilter
     search_fields = ["name"]
     ordering_fields = ["created_at", "name", "created_by"]
     permission_classes = [permissions.IsAuthenticated]

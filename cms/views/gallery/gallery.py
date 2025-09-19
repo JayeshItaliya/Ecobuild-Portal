@@ -11,7 +11,6 @@ from rest_framework.permissions import IsAdminUser
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
 from backend.utils import generic_response
-from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
 from cms.serializers.gallery_serializer import GalleryResponseSerializer
@@ -29,7 +28,6 @@ class BaseGalleryAPIView(TranslatedResponseMixin):
     response_serializer_class = GalleryResponseSerializer
     pagination_class = CustomPagination
     filter_backends = [SearchFilter, OrderingFilter]
-    filterset_class = GalleryFilter
     ordering_fields = ["created_at"]
 
 
