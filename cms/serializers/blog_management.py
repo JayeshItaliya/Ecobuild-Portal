@@ -95,6 +95,20 @@ class BlogManagementSerializer(ModelSerializer):
         instance.save()
         return instance
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        # Properly serialize category name
+        if instance.category:
+            data["category"] = instance.category.name
+        else:
+            data["category"] = None
+
+        # Properly serialize tags list
+        data["tags"] = list(instance.tags.values_list("name", flat=True))
+
+        return data
+
 
 class BlogResponseSerializer(ModelSerializer):
     category = CategoryResponseSerializer()
