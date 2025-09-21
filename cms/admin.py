@@ -36,7 +36,7 @@ class BlogPostAdmin(admin.ModelAdmin):
         "status",
         "views_count",
         "reading_time",
-        "tags",
+        # "tags",
         "content",
         "featured_image",
         "meta_title",
