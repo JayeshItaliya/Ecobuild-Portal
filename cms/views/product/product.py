@@ -16,7 +16,7 @@ class BaseProductAPIView(TranslatedResponseMixin):
 class ProductListCreateAPIView(BaseProductAPIView,ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         products = self.get_queryset()
-        serializer = self.response_serializer_class(products, many=True)
+        serializer = self.response_serializer_class(products, many=True, context={"request": request})
         return generic_response(
             status_code=status.HTTP_200_OK,
             message="Products fetched successfully",

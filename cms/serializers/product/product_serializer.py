@@ -29,6 +29,8 @@ class ProductSerializer(ModelSerializer):
         fields = "__all__"
 
 class ProductResponseSerializer(ModelSerializer):
+    title =TranslatedField()
+    subtitle = TranslatedField()
     sections = ProductSectionResponseSerializer(many=True, read_only=True,default=[])
     class Meta:
         model = Product
