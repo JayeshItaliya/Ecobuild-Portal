@@ -24,11 +24,13 @@ class ProductListCreateAPIView(BaseProductAPIView,ListCreateAPIView):
         )
 
     def post(self, request, *args, **kwargs):
+        print("\n\n\n\n\nRequest data:", request.data)
         serializer = self.serializer_class(data=request.data)
         
         if serializer.is_valid():
-            product = serializer.save()
-            response_serializer = self.response_serializer_class(product)
+            # product = serializer.save()
+            # response_serializer = self.response_serializer_class(product)
+            response_serializer = self.response_serializer_class()
         
             return generic_response(
                 status_code=status.HTTP_201_CREATED,
