@@ -102,6 +102,15 @@ def token_validation(token):
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
+    
+    def get_paginated_response(self, data):
+        return Response({
+           'total_count': self.page.paginator.count,   
+            'count': len(data),  # ✅ total count is here
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data,
+        })
 
 
 def create_audit_log(
