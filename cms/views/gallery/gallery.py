@@ -30,6 +30,14 @@ class BaseGalleryAPIView(TranslatedResponseMixin):
     filter_backends = [SearchFilter, OrderingFilter]
     ordering_fields = ["created_at"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        gallery_type = self.request.query_params.get("type")
+
+        if gallery_type:
+            queryset = queryset.filter(category__type__iexact=gallery_type)
+
+        return queryset
 
 class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
     """API view to list and create galleries."""
