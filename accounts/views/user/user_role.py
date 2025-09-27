@@ -7,6 +7,7 @@ from accounts.mixins import TranslatedResponseMixin
 from accounts.models import Role
 from accounts.serializers.user_role import RoleResponseSerializer
 from accounts.serializers.user_role import RoleSerializer
+from backend.utils import CustomPagination
 from backend.utils import generic_response
 
 
@@ -15,6 +16,7 @@ class BaseRoleAPIView(TranslatedResponseMixin):
 
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
+    pagination_class = CustomPagination
     response_serializer_class = RoleResponseSerializer
     permission_classes = [IsAuthenticated]
 
