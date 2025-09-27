@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
+from django.utils.translation import gettext_lazy as _
 
 from accounts.enums import PlatformChoices
 from backend.enums import ActionType
@@ -19,10 +20,10 @@ class Language(BaseModel):
     def __str__(self):
         return self.name
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         db_table = "language"
-        verbose_name = "Language"
-        verbose_name_plural = "Languages"
+        verbose_name = _("Language")
+        verbose_name_plural = _("Languages")
 
 
 class CompanyInfo(BaseTranslatableModel):
@@ -39,10 +40,10 @@ class CompanyInfo(BaseTranslatableModel):
 
     TRANSLATABLE_FIELDS = ["name", "address", "description"]
 
-    class Meta:
+    class Meta(BaseTranslatableModel.Meta):
         db_table = "company_info"
-        verbose_name = "Company Info"
-        verbose_name_plural = "Company Info"
+        verbose_name = _("Company Info")
+        verbose_name_plural = _("Company Info")
 
     def __str__(self):
         return self.name.get("en", "Unnamed Role")
@@ -110,25 +111,47 @@ class User(AbstractBaseUser, BaseModel):
     def has_perm(self, perm, obj=None):
         return self.is_superuser
 
-    class Meta:
+    class Meta(BaseModel.Meta):
         db_table = "user"
-        verbose_name = "User"
-        verbose_name_plural = "Users"
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
 
 
-class Role(BaseTranslatableModel):
+class Permission(BaseTranslatableModel):
+    action = models.CharField(max_length=100)
+    resource = models.CharField(max_length=100)
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
 
     TRANSLATABLE_FIELDS = ["name", "description"]
 
     def __str__(self):
+        return self.name.get("en", f"{self.action}_{self.resource}")
+
+    class Meta(BaseTranslatableModel.Meta):
+        db_table = "permissions"
+        verbose_name = _("Permission")
+        verbose_name_plural = _("Permissions")
+        unique_together = ["action", "resource"]
+
+
+class Role(BaseTranslatableModel):
+    name = JSONField(default=dict)
+    description = JSONField(null=True, blank=True)
+    permissions = models.ManyToManyField("Permission", related_name="roles", blank=True)
+
+    TRANSLATABLE_FIELDS = ["name", "description"]
+
+    def __str__(self):
         return self.name.get("en", "Unnamed Role")
 
-    class Meta:
+    def has_permission(self, action, resource):
+        return self.permissions.filter(action=action, resource=resource).exists()
+
+    class Meta(BaseTranslatableModel.Meta):
         db_table = "roles"
-        verbose_name = "Role"
-        verbose_name_plural = "Roles"
+        verbose_name = _("Role")
+        verbose_name_plural = _("Roles")
 
 
 class ActivityLog(BaseTranslatableModel):
@@ -156,7 +179,7 @@ class ActivityLog(BaseTranslatableModel):
 
     TRANSLATABLE_FIELDS = ["details"]
 
-    class Meta:
+    class Meta(BaseTranslatableModel.Meta):
         db_table = "activity_log"
-        verbose_name = "Activity Log"
-        verbose_name_plural = "Activity Logs"
+        verbose_name = _("Activity Log")
+        verbose_name_plural = _("Activity Logs")

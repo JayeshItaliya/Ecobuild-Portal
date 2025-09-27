@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.serializers.register import ValidateTokenAPIView
 from accounts.views.account.account_views import LogoutAPIView
 from accounts.views.account.account_views import SigninView
+
 # from accounts.views.account.facebook import FacebookLogin
 from accounts.views.account.google_auth import GoogleLoginView
 from accounts.views.account.password_view import ChangePasswordAPIView
@@ -12,6 +13,8 @@ from accounts.views.account.password_view import PasswordResetConfirmAPIView
 from accounts.views.account.registration_views import SignupView
 from accounts.views.company_info import CompanyInfoCreateAPIView
 from accounts.views.company_info import CompanyInfoRetrieveUpdateAPIView
+from accounts.views.user.permission import PermissionListCreateAPIView
+from accounts.views.user.permission import PermissionRetrieveUpdateDestroyAPIView
 from accounts.views.user.team_members import TeamMemberListAPIView
 from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
@@ -49,6 +52,16 @@ urlpatterns = [
         "role/<str:pk>/",
         RoleRetrieveUpdateDestroyAPIView.as_view(),
         name="role-detail",
+    ),
+    path(
+        "permission/",
+        PermissionListCreateAPIView.as_view(),
+        name="permission-list-create",
+    ),
+    path(
+        "permission/<str:pk>/",
+        PermissionRetrieveUpdateDestroyAPIView.as_view(),
+        name="permission-detail",
     ),
     path(
         "company-info/", CompanyInfoCreateAPIView.as_view(), name="company-info-create"
