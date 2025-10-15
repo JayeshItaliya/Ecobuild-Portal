@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
@@ -12,7 +11,6 @@ from rest_framework.permissions import IsAdminUser
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
 from backend.utils import generic_response
-from cms.filters.filters import GalleryFilter
 from cms.models.gallery import Gallery
 from cms.serializers.gallery_serializer import GalleryListSerializer
 from cms.serializers.gallery_serializer import GalleryResponseSerializer
@@ -29,10 +27,17 @@ class BaseGalleryAPIView(TranslatedResponseMixin):
     list_serializer_class = GalleryListSerializer
     response_serializer_class = GalleryResponseSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = GalleryFilter
+    filter_backends = [SearchFilter, OrderingFilter]
     ordering_fields = ["created_at"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        gallery_type = self.request.query_params.get("type")
+
+        if gallery_type:
+            queryset = queryset.filter(category__type__iexact=gallery_type)
+
+        return queryset
 
 class GalleryListCreateAPIView(BaseGalleryAPIView, ListCreateAPIView):
     """API view to list and create galleries."""

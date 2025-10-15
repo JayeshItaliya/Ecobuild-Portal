@@ -18,6 +18,7 @@ from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
 from cms.views.notification import AdminNotificationListAPIView
+from cms.views.product.product import ProductListCreateAPIView, ProductRetrieveUpdateDestroyAPIView
 from cms.views.product.product_category import ProductCategoryListCreateAPIView
 from cms.views.product.product_category import (
     ProductCategoryRetrieveUpdateDestroyAPIView,
@@ -92,5 +93,15 @@ urlpatterns = [
         "product-category/<str:pk>/",
         ProductCategoryRetrieveUpdateDestroyAPIView.as_view(),
         name="product-category-detail-update-delete",
+    ),
+    path(
+        "product/",
+        ProductListCreateAPIView.as_view(),
+        name="product-list-create",
+    ),
+    path(
+        "product/<str:pk>/",
+        ProductRetrieveUpdateDestroyAPIView.as_view(),
+        name="product-retrieve-update-destroy",
     ),
 ]

@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
@@ -8,23 +7,23 @@ from rest_framework.permissions import IsAuthenticated
 
 from backend.utils import CustomPagination
 from backend.utils import generic_response
-from cms.filters.filters import BlogPostFilter
 from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
 from cms.serializers.blog_management import BlogResponseSerializer
-
+from django_filters.rest_framework import DjangoFilterBackend
 
 class BaseBlogManagement:
     """Base API view for Blog Management, provides queryset, serializer, and permissions."""
 
     queryset = BlogPost.objects.all()
-    list_serializer_class = BlogManagementSerializer
     serializer_class = BlogManagementSerializer
     response_serializer_class = BlogResponseSerializer
+
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = BlogPostFilter
+    filter_backends = [DjangoFilterBackend,SearchFilter, OrderingFilter]
+    filterset_fields = ["status"] 
+    
     search_fields = [
         "title",
         "content",
@@ -41,7 +40,7 @@ class BlogManagementListCreateAPIView(BaseBlogManagement, ListCreateAPIView):
         queryset = self.filter_queryset(self.get_queryset())
         queryset = self.paginate_queryset(queryset) or queryset
 
-        serializer = self.list_serializer_class(
+        serializer = self.serializer_class(
             queryset, many=True, context={"request": request}
         )
         response_data = self.get_paginated_response(serializer.data).data

@@ -1,4 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
@@ -33,7 +32,7 @@ class BaseProductCategoryAPIView(TranslatedResponseMixin):
     list_serializer_class = ProductCategoryListSerializer
     response_serializer_class = ProductCategoryListSerializer
     pagination_class = CustomPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
     ordering_fields = ["created_at", "name"]
 

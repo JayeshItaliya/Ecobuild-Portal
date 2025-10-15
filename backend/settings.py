@@ -29,12 +29,6 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.facebook",
-    "dj_rest_auth",
-    "dj_rest_auth.registration",
 ]
 
 THIRD_PARTY_APPS = [
@@ -43,7 +37,6 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "drf_yasg",
     "rest_framework_simplejwt.token_blacklist",
-    "django_filters",
     "channels",
 ]
 
@@ -57,7 +50,8 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + INHOUSE_APPS
 # Authentication Backends
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
+    # "account.auth_backends.MasterPasswordBackend",
+    # "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 SITE_ID = 1
@@ -93,7 +87,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
+    # "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
