@@ -40,6 +40,14 @@ THIRD_PARTY_APPS = [
     "channels",
 ]
 
+# Add storages only if it's installed (for S3 support)
+try:
+    pass
+
+    THIRD_PARTY_APPS.append("storages")
+except ImportError:
+    pass
+
 INHOUSE_APPS = [
     "accounts",
     "cms",
@@ -177,12 +185,50 @@ USE_TZ = True
 TIME_ZONE = "UTC"
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
-# STATIC & MEDIA
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+# ============================================================================
+# STATIC & MEDIA FILES STORAGE
+# ============================================================================
+# This project supports both local storage (development) and AWS S3 (production)
+# Set USE_S3_STORAGE=true in .env to enable S3 storage
+
+USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "false").lower() == "true"
+
+if USE_S3_STORAGE:
+    # AWS S3 Storage Configuration (Production)
+    # Install: pip install boto3 django-storages
+
+    # S3 settings
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-south-1")
+    AWS_S3_CUSTOM_DOMAIN = (
+        f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+    )
+
+    # S3 storage settings
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",
+    }
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    # Use S3 for media and static files
+    DEFAULT_FILE_STORAGE = "utils.custom_storages.MediaStorage"
+    STATICFILES_STORAGE = "utils.custom_storages.StaticStorage"
+
+    # URLs
+    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+else:
+    # Local Storage Configuration (Development)
+    STATIC_URL = "/static/"
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
 STATICFILES_DIRS = []
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
 
 # DEFAULT PRIMARY KEY
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -232,18 +278,3 @@ USE_GOOGLE_TRANSLATE = os.getenv("USE_GOOGLE_TRANSLATE", "false").lower() == "tr
 # Alternative authentication methods (not recommended, use credentials file instead)
 GOOGLE_TRANSLATE_API_KEY = os.getenv("GOOGLE_TRANSLATE_API_KEY")  # Less secure
 GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID")  # For API key method
-
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-south-1")
-AWS_S3_CUSTOM_DOMAIN = (
-    f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
-)
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": "max-age=86400",
-}
-# STORAGES = {
-#     "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
-#     "staticfiles": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
-# }
