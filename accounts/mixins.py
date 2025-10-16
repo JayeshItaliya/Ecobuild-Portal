@@ -14,14 +14,16 @@ class TranslatedResponseMixin:
     def translate_queryset(self, queryset, lang_code):
         return [self.translate_instance(obj, lang_code) for obj in queryset]
 
+
 from rest_framework import serializers
+
+
 class TranslatedField(serializers.Field):
     def to_representation(self, value):
         request = self.context.get("request")
         lang_code = "en"
         if request:
             lang_code = request.headers.get("Accept-Language", "en").lower()
-            print("Language code from request:", lang_code)
 
         if isinstance(value, dict):
             return value.get(lang_code) or value.get("en")

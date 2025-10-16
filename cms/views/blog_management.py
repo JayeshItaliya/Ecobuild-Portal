@@ -10,7 +10,7 @@ from backend.utils import generic_response
 from cms.models.blog import BlogPost
 from cms.serializers.blog_management import BlogManagementSerializer
 from cms.serializers.blog_management import BlogResponseSerializer
-from django_filters.rest_framework import DjangoFilterBackend
+
 
 class BaseBlogManagement:
     """Base API view for Blog Management, provides queryset, serializer, and permissions."""
@@ -21,9 +21,9 @@ class BaseBlogManagement:
 
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend,SearchFilter, OrderingFilter]
-    filterset_fields = ["status"] 
-    
+    filter_backends = [SearchFilter, OrderingFilter]
+    filterset_fields = ["status"]
+
     search_fields = [
         "title",
         "content",

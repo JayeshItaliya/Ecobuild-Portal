@@ -217,6 +217,21 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 DOMAIN_URL = os.getenv("DOMAIN_URL")
 FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN")
 
+# ============================================================================
+# GOOGLE CLOUD TRANSLATION API - Auto-translate content to Hebrew, Russian, Arabic
+# ============================================================================
+# Credentials file path (JSON file from Google Cloud Console)
+# Get this from: Google Cloud Console > IAM & Admin > Service Accounts
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+# Enable/Disable Google Translation API
+# Set to "true" to use real translations (costs: FREE up to 500k chars/month)
+# Set to "false" to use fake translator for development/testing (no API calls)
+USE_GOOGLE_TRANSLATE = os.getenv("USE_GOOGLE_TRANSLATE", "false").lower() == "true"
+
+# Alternative authentication methods (not recommended, use credentials file instead)
+GOOGLE_TRANSLATE_API_KEY = os.getenv("GOOGLE_TRANSLATE_API_KEY")  # Less secure
+GOOGLE_CLOUD_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT_ID")  # For API key method
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
