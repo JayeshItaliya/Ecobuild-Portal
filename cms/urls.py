@@ -1,7 +1,10 @@
-from django.urls import include
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from cms.views.about_us import create_about_us
+from cms.views.about_us import delete_about_us
+from cms.views.about_us import get_about_us
+from cms.views.about_us import update_about_us
 from cms.views.blog_management import BlogManagementListCreateAPIView
 from cms.views.blog_management import BlogManagementRetrieveUpdateDestroyAPIView
 from cms.views.contact import ContactMessageListCreateAPIView
@@ -18,7 +21,8 @@ from cms.views.gallery.gallery_category import (
     GalleryCategoryRetrieveUpdateDestroyAPIView,
 )
 from cms.views.notification import AdminNotificationListAPIView
-from cms.views.product.product import ProductListCreateAPIView, ProductRetrieveUpdateDestroyAPIView
+from cms.views.product.product import ProductListCreateAPIView
+from cms.views.product.product import ProductRetrieveUpdateDestroyAPIView
 from cms.views.product.product_category import ProductCategoryListCreateAPIView
 from cms.views.product.product_category import (
     ProductCategoryRetrieveUpdateDestroyAPIView,
@@ -34,7 +38,11 @@ urlpatterns = [
         AdminNotificationListAPIView.as_view(),
         name="admin-notification-list",
     ),
-    path("", include(router.urls)),
+    # About Us
+    path("about-us/", get_about_us, name="about-us-get"),
+    path("about-us/create/", create_about_us, name="about-us-create"),
+    path("about-us/<uuid:pk>/update/", update_about_us, name="about-us-update"),
+    path("about-us/<uuid:pk>/delete/", delete_about_us, name="about-us-delete"),
     # Blog
     path(
         "blog-management/",

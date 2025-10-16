@@ -1,14 +1,20 @@
 from django.contrib import admin
 
+from cms.models.about_us import AboutUsPage
+from cms.models.about_us import AboutUsSection
+from cms.models.about_us import CompanyAchievement
+from cms.models.about_us import CompanyTimeline
+from cms.models.about_us import TeamMember
 from cms.models.faq import FAQ
 
-from .models.blog import BlogPost, Category, ContactMessage, Tag
-from .models.product import (
-    Product,
-    ProductCategory,
-    ProductGalleryImage,
-    ProductSection,
-)
+from .models.blog import BlogPost
+from .models.blog import Category
+from .models.blog import ContactMessage
+from .models.blog import Tag
+from .models.product import Product
+from .models.product import ProductCategory
+from .models.product import ProductGalleryImage
+from .models.product import ProductSection
 
 
 @admin.register(ProductCategory)
@@ -76,3 +82,47 @@ class ProductSectionAdmin(admin.ModelAdmin):
 @admin.register(ProductGalleryImage)
 class ProductGalleryImageAdmin(admin.ModelAdmin):
     list_display = ("id", "section", "image", "caption")
+
+
+# About Us Admin
+@admin.register(AboutUsPage)
+class AboutUsPageAdmin(admin.ModelAdmin):
+    list_display = ("id", "company_name", "is_active", "created_at", "updated_at")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("company_name",)
+
+
+@admin.register(TeamMember)
+class TeamMemberAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "full_name",
+        "job_title",
+        "is_leadership",
+        "is_active",
+        "display_order",
+    )
+    list_filter = ("is_leadership", "is_active")
+    search_fields = ("full_name", "email")
+    ordering = ("display_order", "full_name")
+
+
+@admin.register(CompanyTimeline)
+class CompanyTimelineAdmin(admin.ModelAdmin):
+    list_display = ("id", "year", "title", "is_active", "display_order")
+    list_filter = ("is_active", "year")
+    ordering = ("-year", "display_order")
+
+
+@admin.register(CompanyAchievement)
+class CompanyAchievementAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "year", "is_active", "display_order")
+    list_filter = ("is_active", "year")
+    ordering = ("display_order", "-year")
+
+
+@admin.register(AboutUsSection)
+class AboutUsSectionAdmin(admin.ModelAdmin):
+    list_display = ("id", "section_type", "title", "is_active", "display_order")
+    list_filter = ("section_type", "is_active")
+    ordering = ("display_order",)

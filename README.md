@@ -36,7 +36,8 @@ Content is automatically translated to **Hebrew (he)**, **Russian (ru)**, and **
 
 ### Models with Auto-Translation:
 - **Accounts**: CompanyInfo, Role, ActivityLog
-- **CMS**: Document, ContactMessage, FAQ, Gallery, Product, ProductCategory
+- **CMS**: Document, ContactMessage, FAQ, GalleryCategory, Product, ProductCategory, ProductSection
+- **About Us**: AboutUsPage, TeamMember, CompanyTimeline, CompanyAchievement, AboutUsSection
 
 ### Configuration in `.env`:
 ```env
