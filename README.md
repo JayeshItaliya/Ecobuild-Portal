@@ -110,10 +110,15 @@ GOOGLE_APPLICATION_CREDENTIALS=google-credentials.json
 
 ---
 
-## 📚 API Documentation
+## 📚 Documentation
 
+### API Documentation
 - Swagger: http://localhost:8000/swagger/
 - ReDoc: http://localhost:8000/redoc/
+
+### Feature Documentation
+All feature-specific API references and guides are available in the **[docs/](docs/)** folder:
+- [Broadcast News API Reference](docs/BROADCAST_NEWS_API_REFERENCE.md)
 
 ---
 

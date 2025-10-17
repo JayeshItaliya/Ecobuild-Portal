@@ -12,6 +12,7 @@ from cms.serializers.document_serializer import DocumentSerializer
 class DocumentViewSet(viewsets.ModelViewSet):
     """ViewSet for managing Document objects. Supports CRUD operations, search, and ordering."""
 
+    http_method_names = ["get", "post", "patch", "delete"]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     filter_backends = [SearchFilter, OrderingFilter]
@@ -23,6 +24,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 class DocumentAccessViewSet(viewsets.ModelViewSet):
     """ViewSet for managing DocumentAccess objects. Admin-only access."""
 
+    http_method_names = ["get", "post", "patch", "delete"]
     queryset = DocumentAccess.objects.select_related("user", "document")
     serializer_class = DocumentAccessSerializer
     permission_classes = [permissions.IsAdminUser]

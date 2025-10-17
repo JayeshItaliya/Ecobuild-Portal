@@ -7,6 +7,10 @@ from cms.views.about_us import get_about_us
 from cms.views.about_us import update_about_us
 from cms.views.blog_management import BlogManagementListCreateAPIView
 from cms.views.blog_management import BlogManagementRetrieveUpdateDestroyAPIView
+from cms.views.broadcast_news import BroadcastNewsFeaturedView
+from cms.views.broadcast_news import BroadcastNewsManagementViewSet
+from cms.views.broadcast_news import BroadcastNewsPublicDetailView
+from cms.views.broadcast_news import BroadcastNewsPublicListView
 from cms.views.contact import ContactMessageListCreateAPIView
 from cms.views.contact import ContactMessageRetrieveUpdateDestroyAPIView
 from cms.views.document import DocumentAccessViewSet
@@ -31,6 +35,11 @@ from cms.views.product.product_category import (
 router = DefaultRouter()
 router.register(r"documents", DocumentViewSet, basename="document")
 router.register(r"document-access", DocumentAccessViewSet, basename="document-access")
+router.register(
+    r"broadcast-news-management",
+    BroadcastNewsManagementViewSet,
+    basename="broadcast-news-management",
+)
 
 urlpatterns = [
     path(
@@ -112,4 +121,22 @@ urlpatterns = [
         ProductRetrieveUpdateDestroyAPIView.as_view(),
         name="product-retrieve-update-destroy",
     ),
+    # Broadcast News - Public Endpoints
+    path(
+        "broadcast-news/",
+        BroadcastNewsPublicListView.as_view(),
+        name="broadcast-news-public-list",
+    ),
+    path(
+        "broadcast-news/featured/",
+        BroadcastNewsFeaturedView.as_view(),
+        name="broadcast-news-featured",
+    ),
+    path(
+        "broadcast-news/<slug:slug>/",
+        BroadcastNewsPublicDetailView.as_view(),
+        name="broadcast-news-public-detail",
+    ),
 ]
+
+urlpatterns += router.urls
