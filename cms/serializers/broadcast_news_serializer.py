@@ -1,5 +1,7 @@
 from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import SerializerMethodField
 
+from accounts.mixins import TranslatedField
 from cms.models.broadcast_news import BroadcastNews
 from cms.models.broadcast_news import BroadcastNewsDetail
 
@@ -8,6 +10,9 @@ class BroadcastNewsDetailSerializer(ModelSerializer):
     """
     Serializer for BroadcastNewsDetail - interview content line by line
     """
+
+    speaker = TranslatedField()
+    content = TranslatedField()
 
     class Meta:
         model = BroadcastNewsDetail
@@ -27,6 +32,13 @@ class BroadcastNewsListSerializer(ModelSerializer):
     """
     Serializer for listing broadcast news (summary view)
     """
+
+    # Use TranslatedField for translatable fields
+    title = TranslatedField()
+    channel_name = TranslatedField()
+    interviewer_name = TranslatedField()
+    interviewee_name = TranslatedField()
+    description = TranslatedField()
 
     class Meta:
         model = BroadcastNews
@@ -57,7 +69,16 @@ class BroadcastNewsDetailedSerializer(ModelSerializer):
     Serializer for detailed broadcast news view with interview details
     """
 
-    details = BroadcastNewsDetailSerializer(many=True, read_only=True)
+    # Use TranslatedField for translatable fields
+    title = TranslatedField()
+    channel_name = TranslatedField()
+    interviewer_name = TranslatedField()
+    interviewee_name = TranslatedField()
+    description = TranslatedField()
+    meta_title = TranslatedField()
+    meta_description = TranslatedField()
+
+    details = SerializerMethodField()
 
     class Meta:
         model = BroadcastNews
@@ -86,6 +107,13 @@ class BroadcastNewsDetailedSerializer(ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "slug", "views_count", "created_at", "updated_at"]
+
+    def get_details(self, obj):
+        """Get details with translations."""
+        details = obj.details.all().order_by("order")
+        return BroadcastNewsDetailSerializer(
+            details, many=True, context=self.context
+        ).data
 
 
 class BroadcastNewsCreateUpdateSerializer(ModelSerializer):
@@ -156,6 +184,11 @@ class BroadcastNewsFeaturedSerializer(ModelSerializer):
     """
     Serializer for featured broadcast news (minimal fields)
     """
+
+    # Use TranslatedField for translatable fields
+    title = TranslatedField()
+    channel_name = TranslatedField()
+    description = TranslatedField()
 
     class Meta:
         model = BroadcastNews
