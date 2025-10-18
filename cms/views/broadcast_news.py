@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
+from accounts.mixins import TranslatedResponseMixin
 from backend.utils import CustomPagination
 from backend.utils import generic_response
 from cms.models.broadcast_news import BroadcastNews
@@ -19,7 +20,7 @@ from cms.serializers.broadcast_news_serializer import BroadcastNewsFeaturedSeria
 from cms.serializers.broadcast_news_serializer import BroadcastNewsListSerializer
 
 
-class BaseBroadcastNewsManagement:
+class BaseBroadcastNewsManagement(TranslatedResponseMixin):
     """Base class for Broadcast News Management with common configurations"""
 
     queryset = BroadcastNews.objects.filter(deleted_at__isnull=True)
@@ -75,15 +76,12 @@ class BroadcastNewsManagementViewSet(BaseBroadcastNewsManagement, ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
+        lang_code = self.get_language_code(request)
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response_data = self.get_paginated_response(serializer.data).data
-        else:
-            serializer = self.get_serializer(queryset, many=True)
-            response_data = serializer.data
+        queryset = self.paginate_queryset(queryset) or queryset
+        queryset = self.translate_queryset(queryset, lang_code)
+        serializer = self.get_serializer(queryset, many=True)
+        response_data = self.get_paginated_response(serializer.data).data
 
         return generic_response(
             status_code=status.HTTP_200_OK,
@@ -92,7 +90,9 @@ class BroadcastNewsManagementViewSet(BaseBroadcastNewsManagement, ModelViewSet):
         )
 
     def retrieve(self, request, *args, **kwargs):
+        lang_code = self.get_language_code(request)
         instance = self.get_object()
+        instance = self.translate_instance(instance, lang_code)
         serializer = self.get_serializer(instance)
         return generic_response(
             status_code=status.HTTP_200_OK,
@@ -157,15 +157,12 @@ class BroadcastNewsPublicListView(BaseBroadcastNewsManagement, ListAPIView):
         return queryset
 
     def get(self, request, *args, **kwargs):
+        lang_code = self.get_language_code(request)
         queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            response_data = self.get_paginated_response(serializer.data).data
-        else:
-            serializer = self.get_serializer(queryset, many=True)
-            response_data = serializer.data
+        queryset = self.paginate_queryset(queryset) or queryset
+        queryset = self.translate_queryset(queryset, lang_code)
+        serializer = self.get_serializer(queryset, many=True)
+        response_data = self.get_paginated_response(serializer.data).data
 
         return generic_response(
             status_code=status.HTTP_200_OK,
@@ -174,7 +171,7 @@ class BroadcastNewsPublicListView(BaseBroadcastNewsManagement, ListAPIView):
         )
 
 
-class BroadcastNewsPublicDetailView(RetrieveAPIView):
+class BroadcastNewsPublicDetailView(BaseBroadcastNewsManagement, RetrieveAPIView):
     """
     Public API to view a single broadcast news item with all interview details
     No authentication required
@@ -189,6 +186,7 @@ class BroadcastNewsPublicDetailView(RetrieveAPIView):
         return BroadcastNews.objects.filter(status="Published", deleted_at__isnull=True)
 
     def retrieve(self, request, *args, **kwargs):
+        lang_code = self.get_language_code(request)
         instance = self.get_object()
 
         # Increment views count
@@ -197,6 +195,7 @@ class BroadcastNewsPublicDetailView(RetrieveAPIView):
         )
         instance.refresh_from_db()
 
+        instance = self.translate_instance(instance, lang_code)
         serializer = self.get_serializer(instance)
         return generic_response(
             status_code=status.HTTP_200_OK,
