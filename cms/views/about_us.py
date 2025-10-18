@@ -43,12 +43,14 @@ FEATURES:
     ✅ Language selection via Accept-Language header
 """
 
+import logging
+
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 
 from accounts.mixins import TranslatedResponseMixin
 from backend.utils import generic_response
@@ -82,20 +84,15 @@ def get_about_us(request):
         about_us_page = AboutUsPage.objects.filter(is_active=True).first()
 
         if not about_us_page:
-            return Response(
-                generic_response(
-                    message="No active About Us page found",
-                    data=None,
-                    success=False,
-                ),
-                status=status.HTTP_404_NOT_FOUND,
+            return generic_response(
+                message="No active About Us page found",
+                data=None,
+                status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        # Get language from request
-        lang_code = request.headers.get("Accept-Language", "en").lower()
-
-        # Translate the instance
+        # Get language from request using mixin and translate the instance
         mixin = TranslatedResponseMixin()
+        lang_code = mixin.get_language_code(request)
         about_us_page = mixin.translate_instance(about_us_page, lang_code)
 
         # Serialize with all related data
@@ -103,21 +100,17 @@ def get_about_us(request):
             about_us_page, context={"request": request}
         )
 
-        return Response(
-            generic_response(
-                message="About Us page retrieved successfully",
-                data=serializer.data,
-            ),
-            status=status.HTTP_200_OK,
+        return generic_response(
+            message="About Us page retrieved successfully",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK,
         )
 
     except Exception as e:
-        return Response(
-            generic_response(
-                message=f"Error retrieving About Us page: {str(e)}",
-                success=False,
-            ),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        return generic_response(
+            message=f"Error retrieving About Us page: {str(e)}",
+            error_message=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -125,9 +118,13 @@ def get_about_us(request):
 @permission_classes([IsAuthenticated])
 def create_about_us(request):
     """
-    POST /api/cms/about-us/
+    POST /api/cms/about-us/create/
 
     Create complete About Us page with all related data in ONE API call.
+
+    IMPORTANT: Only one About Us page is allowed. If a page already exists,
+    this endpoint will return a 409 Conflict error with instructions to use
+    the update endpoint instead.
 
     Authentication required (admin only).
 
@@ -162,42 +159,62 @@ def create_about_us(request):
     All translatable fields will be auto-translated to Hebrew, Russian, Arabic.
     """
     try:
+        # Check if About Us page already exists
+        existing_page = AboutUsPage.objects.filter(deleted_at__isnull=True).first()
+        if existing_page:
+            error_message = "About Us page already exists. Only one About Us page is allowed. Use the update endpoint to modify the existing page."
+            return generic_response(
+                message=error_message,
+                data={
+                    "existing_page_id": str(existing_page.id),
+                    "update_url": f"/api/cms/about-us/{existing_page.id}/update/",
+                },
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+        # Validate the data first
         serializer = AboutUsPageUnifiedSerializer(
             data=request.data, context={"request": request}
         )
 
-        if serializer.is_valid():
-            about_us_page = serializer.save()
-
-            # Return response with all data
-            response_serializer = AboutUsPageResponseSerializer(
-                about_us_page, context={"request": request}
+        if not serializer.is_valid():
+            return generic_response(
+                message="Invalid data provided",
+                data={"errors": serializer.errors, "received_data": request.data},
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-            return Response(
-                generic_response(
-                    message="About Us page created successfully with all related data",
-                    data=response_serializer.data,
-                ),
-                status=status.HTTP_201_CREATED,
-            )
+        # Create the About Us page
+        about_us_page = serializer.save()
 
-        return Response(
-            generic_response(
-                message="Invalid data",
-                data=serializer.errors,
-                success=False,
-            ),
-            status=status.HTTP_400_BAD_REQUEST,
+        # Return response with all data
+        response_serializer = AboutUsPageResponseSerializer(
+            about_us_page, context={"request": request}
         )
 
+        return generic_response(
+            message="About Us page created successfully with all related data",
+            data=response_serializer.data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    except serializers.ValidationError as e:
+        return generic_response(
+            message="Validation error while creating About Us page",
+            data={
+                "error": str(e),
+                "detail": e.detail if hasattr(e, "detail") else None,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     except Exception as e:
-        return Response(
-            generic_response(
-                message=f"Error creating About Us page: {str(e)}",
-                success=False,
-            ),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        # Log the full error for debugging (server-side only)
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error creating About Us page: {str(e)}", exc_info=True)
+
+        return generic_response(
+            message=f"Error creating About Us page: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -240,38 +257,31 @@ def update_about_us(request, pk):
                 about_us_page, context={"request": request}
             )
 
-            return Response(
-                generic_response(
-                    message="About Us page updated successfully",
-                    data=response_serializer.data,
-                ),
-                status=status.HTTP_200_OK,
+            return generic_response(
+                message="About Us page updated successfully",
+                data=response_serializer.data,
+                status_code=status.HTTP_200_OK,
             )
 
-        return Response(
-            generic_response(
-                message="Invalid data",
-                data=serializer.errors,
-                success=False,
-            ),
-            status=status.HTTP_400_BAD_REQUEST,
+        return generic_response(
+            message="Invalid data",
+            data=serializer.errors,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     except AboutUsPage.DoesNotExist:
-        return Response(
-            generic_response(
-                message="About Us page not found",
-                success=False,
-            ),
-            status=status.HTTP_404_NOT_FOUND,
+        return generic_response(
+            message="About Us page not found",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
     except Exception as e:
-        return Response(
-            generic_response(
-                message=f"Error updating About Us page: {str(e)}",
-                success=False,
-            ),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        # Log the full error for debugging (server-side only)
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error updating About Us page: {str(e)}", exc_info=True)
+
+        return generic_response(
+            message=f"Error updating About Us page: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -289,27 +299,23 @@ def delete_about_us(request, pk):
         about_us_page = AboutUsPage.objects.get(id=pk)
         about_us_page.delete(deleted_by_user=request.user, soft=True)
 
-        return Response(
-            generic_response(
-                message="About Us page deleted successfully",
-                data=None,
-            ),
-            status=status.HTTP_200_OK,
+        return generic_response(
+            message="About Us page deleted successfully",
+            data=None,
+            status_code=status.HTTP_200_OK,
         )
 
     except AboutUsPage.DoesNotExist:
-        return Response(
-            generic_response(
-                message="About Us page not found",
-                success=False,
-            ),
-            status=status.HTTP_404_NOT_FOUND,
+        return generic_response(
+            message="About Us page not found",
+            status_code=status.HTTP_404_NOT_FOUND,
         )
     except Exception as e:
-        return Response(
-            generic_response(
-                message=f"Error deleting About Us page: {str(e)}",
-                success=False,
-            ),
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        # Log the full error for debugging (server-side only)
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error deleting About Us page: {str(e)}", exc_info=True)
+
+        return generic_response(
+            message=f"Error deleting About Us page: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

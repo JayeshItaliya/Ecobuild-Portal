@@ -46,17 +46,25 @@ class ApiRenderer(JSONRenderer):
         response_dict["code"] = response_status
 
         # Check for serializer errors in the renderer context
-        if response_status >= 400:
+        # Only try to extract error messages if we don't already have a meaningful message
+        if response_status >= 400 and (
+            not response_dict["message"] or response_dict["message"] == ""
+        ):
             errors = response.data
             if isinstance(errors, dict):
-                # Get the first error message in the dictionary, if any
-                for value in errors.values():
-                    if isinstance(value, list) and value:
-                        response_dict["message"] = str(value[0])
-                        break
-                    if not isinstance(value, list):
-                        response_dict["message"] = str(value)
-                        break
+                # Skip if this looks like a structured response with explicit message
+                if "status_code" in errors and "message" in errors:
+                    # This is a structured response, don't override the message
+                    pass
+                else:
+                    # Get the first error message in the dictionary, if any
+                    for value in errors.values():
+                        if isinstance(value, list) and value:
+                            response_dict["message"] = str(value[0])
+                            break
+                        if not isinstance(value, list):
+                            response_dict["message"] = str(value)
+                            break
 
         # Render the response dictionary as JSON
         return super().render(response_dict, accepted_media_type, renderer_context)
@@ -102,15 +110,17 @@ def token_validation(token):
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
-    
+
     def get_paginated_response(self, data):
-        return Response({
-           'total_count': self.page.paginator.count,   
-            'count': len(data),  # ✅ total count is here
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data,
-        })
+        return Response(
+            {
+                "total_count": self.page.paginator.count,
+                "count": len(data),  # ✅ total count is here
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
 
 
 def create_audit_log(

@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from cms.models.about_us import AboutUsPage
-from cms.models.about_us import AboutUsSection
 from cms.models.about_us import CompanyAchievement
 from cms.models.about_us import CompanyTimeline
 from cms.models.about_us import TeamMember
@@ -121,13 +120,6 @@ class CompanyAchievementAdmin(admin.ModelAdmin):
     list_display = ("id", "title", "year", "is_active", "display_order")
     list_filter = ("is_active", "year")
     ordering = ("display_order", "-year")
-
-
-@admin.register(AboutUsSection)
-class AboutUsSectionAdmin(admin.ModelAdmin):
-    list_display = ("id", "section_type", "title", "is_active", "display_order")
-    list_filter = ("section_type", "is_active")
-    ordering = ("display_order",)
 
 
 # Broadcast News Admin

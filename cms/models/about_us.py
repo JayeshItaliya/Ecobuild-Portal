@@ -11,64 +11,32 @@ from backend.models import BaseTranslatableModel
 
 class AboutUsPage(BaseTranslatableModel):
     """
-    Main About Us page content.
-    Supports multiple sections with rich content and automatic translation.
+    Simplified About Us page content for easy admin management.
+    Core fields only - no complex optional features.
     """
 
-    # Hero Section
+    # Hero Section - Simplified
     hero_title = JSONField(default=dict, help_text="Main hero title")
     hero_subtitle = JSONField(default=dict, help_text="Hero subtitle/tagline")
-    hero_description = JSONField(default=dict, help_text="Hero description text")
     hero_image = models.ImageField(
         upload_to="about_us/hero/", null=True, blank=True, help_text="Hero banner image"
     )
-    hero_video_url = models.URLField(
-        null=True, blank=True, help_text="Optional hero video URL"
-    )
 
-    # Company Overview
+    # Company Overview - Essential only
     company_name = JSONField(default=dict, help_text="Company name")
-    company_tagline = JSONField(default=dict, help_text="Company tagline/slogan")
     company_description = JSONField(default=dict, help_text="Main company description")
     founded_year = models.IntegerField(null=True, blank=True, help_text="Year founded")
     company_logo = models.ImageField(upload_to="about_us/logos/", null=True, blank=True)
 
-    # Mission & Vision
+    # Mission & Vision - Core values
     mission_statement = JSONField(default=dict, help_text="Company mission statement")
     vision_statement = JSONField(default=dict, help_text="Company vision statement")
-    core_values = JSONField(
-        default=list,
-        help_text="List of core values (each item should be a dict with 'title' and 'description')",
-    )
 
-    # Company Story
+    # Company Story - Simplified
     our_story_title = JSONField(default=dict, help_text="Story section title")
     our_story_content = JSONField(default=dict, help_text="Company story/history")
-    our_story_image = models.ImageField(
-        upload_to="about_us/story/", null=True, blank=True
-    )
 
-    # Statistics/Achievements
-    years_of_experience = models.IntegerField(
-        null=True, blank=True, help_text="Years in business"
-    )
-    projects_completed = models.IntegerField(
-        null=True, blank=True, help_text="Number of completed projects"
-    )
-    satisfied_clients = models.IntegerField(
-        null=True, blank=True, help_text="Number of clients"
-    )
-    team_members_count = models.IntegerField(
-        null=True, blank=True, help_text="Number of team members"
-    )
-
-    # Call to Action
-    cta_title = JSONField(default=dict, help_text="Call-to-action title")
-    cta_description = JSONField(default=dict, help_text="Call-to-action description")
-    cta_button_text = JSONField(default=dict, help_text="CTA button text")
-    cta_button_link = models.URLField(null=True, blank=True, help_text="CTA link URL")
-
-    # SEO
+    # SEO - Essential for website
     meta_title = JSONField(default=dict, help_text="Page meta title for SEO")
     meta_description = JSONField(
         default=dict, help_text="Page meta description for SEO"
@@ -83,17 +51,12 @@ class AboutUsPage(BaseTranslatableModel):
     TRANSLATABLE_FIELDS = [
         "hero_title",
         "hero_subtitle",
-        "hero_description",
         "company_name",
-        "company_tagline",
         "company_description",
         "mission_statement",
         "vision_statement",
         "our_story_title",
         "our_story_content",
-        "cta_title",
-        "cta_description",
-        "cta_button_text",
         "meta_title",
         "meta_description",
     ]
@@ -114,19 +77,14 @@ class AboutUsPage(BaseTranslatableModel):
 
 class TeamMember(BaseTranslatableModel):
     """
-    Team member/leadership information for About Us page.
+    Simplified team member information for About Us page.
+    Essential fields only for easy admin management.
     """
 
-    # Personal Information
+    # Personal Information - Essential only
     full_name = models.CharField(max_length=255, help_text="Full name")
     job_title = JSONField(default=dict, help_text="Job title/position")
     bio = JSONField(default=dict, help_text="Biography/description")
-
-    # Contact & Social
-    email = models.EmailField(null=True, blank=True, help_text="Contact email")
-    phone = models.CharField(max_length=20, null=True, blank=True, help_text="Phone")
-    linkedin_url = models.URLField(null=True, blank=True, help_text="LinkedIn profile")
-    twitter_url = models.URLField(null=True, blank=True, help_text="Twitter profile")
 
     # Media
     profile_image = models.ImageField(
@@ -222,58 +180,3 @@ class CompanyAchievement(BaseTranslatableModel):
             else "Achievement"
         )
         return f"{title} ({self.year})" if self.year else title
-
-
-class AboutUsSection(BaseTranslatableModel):
-    """
-    Flexible additional sections for About Us page.
-    Allows admin to add custom sections with different content types.
-    """
-
-    SECTION_TYPES = [
-        ("text", "Text Content"),
-        ("text_image", "Text with Image"),
-        ("image_text", "Image with Text"),
-        ("features", "Feature List"),
-        ("statistics", "Statistics"),
-        ("quote", "Quote/Testimonial"),
-        ("video", "Video"),
-    ]
-
-    section_type = models.CharField(
-        max_length=20, choices=SECTION_TYPES, default="text"
-    )
-    title = JSONField(default=dict, help_text="Section title")
-    subtitle = JSONField(default=dict, help_text="Section subtitle")
-    content = JSONField(default=dict, help_text="Main content")
-
-    # Media
-    image = models.ImageField(upload_to="about_us/sections/", null=True, blank=True)
-    video_url = models.URLField(null=True, blank=True, help_text="Video URL")
-
-    # Additional data (for features, statistics, etc.)
-    additional_data = JSONField(
-        default=dict,
-        blank=True,
-        help_text="Additional structured data (e.g., feature list, stats)",
-    )
-
-    # Display
-    display_order = models.IntegerField(default=0, help_text="Display order")
-    is_active = models.BooleanField(default=True, help_text="Show on website?")
-
-    TRANSLATABLE_FIELDS = ["title", "subtitle", "content"]
-
-    class Meta:
-        db_table = "about_us_section"
-        verbose_name = "About Us Section"
-        verbose_name_plural = "About Us Sections"
-        ordering = ["display_order"]
-
-    def __str__(self):
-        title = (
-            self.title.get("en", "Section")
-            if isinstance(self.title, dict)
-            else "Section"
-        )
-        return f"{self.section_type.title()} - {title}"

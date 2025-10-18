@@ -30,11 +30,11 @@ EXAMPLE REQUEST (Create everything):
     }
 """
 
+from django.db import transaction
 from rest_framework import serializers
 
 from accounts.mixins import TranslatedField
 from cms.models.about_us import AboutUsPage
-from cms.models.about_us import AboutUsSection
 from cms.models.about_us import CompanyAchievement
 from cms.models.about_us import CompanyTimeline
 from cms.models.about_us import TeamMember
@@ -54,10 +54,6 @@ class TeamMemberNestedSerializer(serializers.ModelSerializer):
             "full_name",
             "job_title",
             "bio",
-            "email",
-            "phone",
-            "linkedin_url",
-            "twitter_url",
             "profile_image",
             "display_order",
             "is_leadership",
@@ -101,41 +97,20 @@ class CompanyAchievementNestedSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class AboutUsSectionNestedSerializer(serializers.ModelSerializer):
-    """Nested serializer for sections within About Us page."""
-
-    class Meta:
-        model = AboutUsSection
-        fields = [
-            "id",
-            "section_type",
-            "title",
-            "subtitle",
-            "content",
-            "image",
-            "video_url",
-            "additional_data",
-            "display_order",
-            "is_active",
-        ]
-        read_only_fields = ["id"]
-
-
 # ============================================================================
-# UNIFIED ABOUT US PAGE SERIALIZER (ONE API CALL FOR EVERYTHING)
+# UNIFIED ABOUT US PAGE SERIALIZER (SIMPLIFIED FOR ADMIN MANAGEMENT)
 # ============================================================================
 
 
 class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
     """
-    Unified serializer for About Us page with all related data.
+    Simplified serializer for About Us page with essential related data.
 
     Frontend can send everything in one API call:
-    - About Us page content
-    - Team members
+    - About Us page content (simplified fields)
+    - Team members (essential fields only)
     - Company timeline
     - Achievements
-    - Additional sections
 
     All data is created/updated in a single transaction.
     """
@@ -144,79 +119,88 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
     team_members = TeamMemberNestedSerializer(many=True, required=False)
     timeline = CompanyTimelineNestedSerializer(many=True, required=False)
     achievements = CompanyAchievementNestedSerializer(many=True, required=False)
-    sections = AboutUsSectionNestedSerializer(many=True, required=False)
 
     class Meta:
         model = AboutUsPage
         fields = [
             "id",
-            # Hero Section
+            # Hero Section - Simplified
             "hero_title",
             "hero_subtitle",
-            "hero_description",
             "hero_image",
-            "hero_video_url",
-            # Company Info
+            # Company Info - Essential only
             "company_name",
-            "company_tagline",
             "company_description",
             "founded_year",
             "company_logo",
-            # Mission & Vision
+            # Mission & Vision - Core values
             "mission_statement",
             "vision_statement",
-            "core_values",
-            # Story
+            # Story - Simplified
             "our_story_title",
             "our_story_content",
-            "our_story_image",
-            # Statistics
-            "years_of_experience",
-            "projects_completed",
-            "satisfied_clients",
-            "team_members_count",
-            # CTA
-            "cta_title",
-            "cta_description",
-            "cta_button_text",
-            "cta_button_link",
-            # SEO
+            # SEO - Essential for website
             "meta_title",
             "meta_description",
             # Status
             "is_active",
-            # Related data
+            # Related data - Essential only
             "team_members",
             "timeline",
             "achievements",
-            "sections",
             # Meta
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def validate(self, data):
+        """
+        Validate that only one About Us page can exist.
+        """
+        # Check if this is a create operation (no instance provided)
+        if not self.instance:
+            existing_page = AboutUsPage.objects.filter(deleted_at__isnull=True).first()
+            if existing_page:
+                raise serializers.ValidationError(
+                    "About Us page already exists. Only one About Us page is allowed. Use the update endpoint to modify the existing page."
+                )
+        return data
+
+    @transaction.atomic
     def create(self, validated_data):
         """
         Create About Us page with all related data in one transaction.
         """
-        # Extract nested data
-        team_members_data = validated_data.pop("team_members", [])
-        timeline_data = validated_data.pop("timeline", [])
-        achievements_data = validated_data.pop("achievements", [])
-        sections_data = validated_data.pop("sections", [])
+        try:
+            # Extract nested data
+            team_members_data = validated_data.pop("team_members", [])
+            timeline_data = validated_data.pop("timeline", [])
+            achievements_data = validated_data.pop("achievements", [])
 
-        # Create About Us page
-        user = self.context.get("request").user if self.context.get("request") else None
-        about_us_page = AboutUsPage.objects.create(**validated_data, created_by=user)
+            # Create About Us page
+            user = (
+                self.context.get("request").user
+                if self.context.get("request")
+                else None
+            )
+            about_us_page = AboutUsPage.objects.create(
+                **validated_data, created_by=user
+            )
 
-        # Create related data
-        self._create_team_members(about_us_page, team_members_data, user)
-        self._create_timeline(about_us_page, timeline_data, user)
-        self._create_achievements(about_us_page, achievements_data, user)
-        self._create_sections(about_us_page, sections_data, user)
+            # Create related data
+            if team_members_data:
+                self._create_team_members(team_members_data, user)
+            if timeline_data:
+                self._create_timeline(timeline_data, user)
+            if achievements_data:
+                self._create_achievements(achievements_data, user)
 
-        return about_us_page
+            return about_us_page
+
+        except Exception as e:
+            # Transaction will be rolled back automatically
+            raise serializers.ValidationError(f"Error creating About Us page: {str(e)}")
 
     def update(self, instance, validated_data):
         """
@@ -226,7 +210,6 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
         team_members_data = validated_data.pop("team_members", None)
         timeline_data = validated_data.pop("timeline", None)
         achievements_data = validated_data.pop("achievements", None)
-        sections_data = validated_data.pop("sections", None)
 
         # Update About Us page fields
         user = self.context.get("request").user if self.context.get("request") else None
@@ -237,57 +220,65 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
 
         # Update related data if provided
         if team_members_data is not None:
-            self._update_team_members(instance, team_members_data, user)
+            self._update_team_members(team_members_data, user)
         if timeline_data is not None:
-            self._update_timeline(instance, timeline_data, user)
+            self._update_timeline(timeline_data, user)
         if achievements_data is not None:
-            self._update_achievements(instance, achievements_data, user)
-        if sections_data is not None:
-            self._update_sections(instance, sections_data, user)
+            self._update_achievements(achievements_data, user)
 
         return instance
 
-    def _create_team_members(self, about_us_page, team_members_data, user):
+    def _create_team_members(self, team_members_data, user):
         """Create team members."""
-        for member_data in team_members_data:
-            TeamMember.objects.create(**member_data, created_by=user)
+        serializer = TeamMemberNestedSerializer(data=team_members_data, many=True)
+        if serializer.is_valid():
+            for member_data in serializer.validated_data:
+                TeamMember.objects.create(**member_data, created_by=user)
+        else:
+            raise serializers.ValidationError(
+                f"Team members validation error: {serializer.errors}"
+            )
 
-    def _update_team_members(self, about_us_page, team_members_data, user):
+    def _update_team_members(self, team_members_data, user):
         """Update team members - replace all existing with new data."""
         # Delete existing team members
         TeamMember.objects.all().delete(soft=True, deleted_by_user=user)
         # Create new ones
-        self._create_team_members(about_us_page, team_members_data, user)
+        self._create_team_members(team_members_data, user)
 
-    def _create_timeline(self, about_us_page, timeline_data, user):
+    def _create_timeline(self, timeline_data, user):
         """Create timeline entries."""
-        for entry_data in timeline_data:
-            CompanyTimeline.objects.create(**entry_data, created_by=user)
+        serializer = CompanyTimelineNestedSerializer(data=timeline_data, many=True)
+        if serializer.is_valid():
+            for entry_data in serializer.validated_data:
+                CompanyTimeline.objects.create(**entry_data, created_by=user)
+        else:
+            raise serializers.ValidationError(
+                f"Timeline validation error: {serializer.errors}"
+            )
 
-    def _update_timeline(self, about_us_page, timeline_data, user):
+    def _update_timeline(self, timeline_data, user):
         """Update timeline - replace all existing with new data."""
         CompanyTimeline.objects.all().delete(soft=True, deleted_by_user=user)
-        self._create_timeline(about_us_page, timeline_data, user)
+        self._create_timeline(timeline_data, user)
 
-    def _create_achievements(self, about_us_page, achievements_data, user):
+    def _create_achievements(self, achievements_data, user):
         """Create achievements."""
-        for achievement_data in achievements_data:
-            CompanyAchievement.objects.create(**achievement_data, created_by=user)
+        serializer = CompanyAchievementNestedSerializer(
+            data=achievements_data, many=True
+        )
+        if serializer.is_valid():
+            for achievement_data in serializer.validated_data:
+                CompanyAchievement.objects.create(**achievement_data, created_by=user)
+        else:
+            raise serializers.ValidationError(
+                f"Achievements validation error: {serializer.errors}"
+            )
 
-    def _update_achievements(self, about_us_page, achievements_data, user):
+    def _update_achievements(self, achievements_data, user):
         """Update achievements - replace all existing with new data."""
         CompanyAchievement.objects.all().delete(soft=True, deleted_by_user=user)
-        self._create_achievements(about_us_page, achievements_data, user)
-
-    def _create_sections(self, about_us_page, sections_data, user):
-        """Create additional sections."""
-        for section_data in sections_data:
-            AboutUsSection.objects.create(**section_data, created_by=user)
-
-    def _update_sections(self, about_us_page, sections_data, user):
-        """Update sections - replace all existing with new data."""
-        AboutUsSection.objects.all().delete(soft=True, deleted_by_user=user)
-        self._create_sections(about_us_page, sections_data, user)
+        self._create_achievements(achievements_data, user)
 
 
 # ============================================================================
@@ -308,10 +299,6 @@ class TeamMemberResponseSerializer(serializers.ModelSerializer):
             "full_name",
             "job_title",
             "bio",
-            "email",
-            "phone",
-            "linkedin_url",
-            "twitter_url",
             "profile_image",
             "is_leadership",
             "display_order",
@@ -349,48 +336,21 @@ class CompanyAchievementResponseSerializer(serializers.ModelSerializer):
         ]
 
 
-class AboutUsSectionResponseSerializer(serializers.ModelSerializer):
-    """Section with translated content."""
-
-    title = TranslatedField()
-    subtitle = TranslatedField()
-    content = TranslatedField()
-
-    class Meta:
-        model = AboutUsSection
-        fields = [
-            "id",
-            "section_type",
-            "title",
-            "subtitle",
-            "content",
-            "image",
-            "video_url",
-            "additional_data",
-            "display_order",
-        ]
-
-
 class AboutUsPageResponseSerializer(serializers.ModelSerializer):
     """
     Response serializer with all related data and translations.
     Returns translated content based on Accept-Language header.
     """
 
-    # Translated fields
+    # Translated fields - Simplified
     hero_title = TranslatedField()
     hero_subtitle = TranslatedField()
-    hero_description = TranslatedField()
     company_name = TranslatedField()
-    company_tagline = TranslatedField()
     company_description = TranslatedField()
     mission_statement = TranslatedField()
     vision_statement = TranslatedField()
     our_story_title = TranslatedField()
     our_story_content = TranslatedField()
-    cta_title = TranslatedField()
-    cta_description = TranslatedField()
-    cta_button_text = TranslatedField()
     meta_title = TranslatedField()
     meta_description = TranslatedField()
 
@@ -398,7 +358,6 @@ class AboutUsPageResponseSerializer(serializers.ModelSerializer):
     team_members = serializers.SerializerMethodField()
     timeline = serializers.SerializerMethodField()
     achievements = serializers.SerializerMethodField()
-    sections = serializers.SerializerMethodField()
 
     class Meta:
         model = AboutUsPage
@@ -406,32 +365,21 @@ class AboutUsPageResponseSerializer(serializers.ModelSerializer):
             "id",
             "hero_title",
             "hero_subtitle",
-            "hero_description",
             "hero_image",
-            "hero_video_url",
             "company_name",
-            "company_tagline",
             "company_description",
             "founded_year",
             "company_logo",
             "mission_statement",
             "vision_statement",
-            "core_values",
             "our_story_title",
             "our_story_content",
-            "our_story_image",
-            "years_of_experience",
-            "projects_completed",
-            "satisfied_clients",
-            "team_members_count",
-            "cta_title",
-            "cta_description",
-            "cta_button_text",
-            "cta_button_link",
+            "meta_title",
+            "meta_description",
+            "is_active",
             "team_members",
             "timeline",
             "achievements",
-            "sections",
         ]
 
     def get_team_members(self, obj):
@@ -481,20 +429,4 @@ class AboutUsPageResponseSerializer(serializers.ModelSerializer):
             achievements = mixin.translate_queryset(achievements, lang_code)
         return CompanyAchievementResponseSerializer(
             achievements, many=True, context=self.context
-        ).data
-
-    def get_sections(self, obj):
-        """Get sections with translations."""
-        sections = AboutUsSection.objects.filter(is_active=True).order_by(
-            "display_order"
-        )
-        request = self.context.get("request")
-        if request:
-            lang_code = request.headers.get("Accept-Language", "en").lower()
-            from accounts.mixins import TranslatedResponseMixin
-
-            mixin = TranslatedResponseMixin()
-            sections = mixin.translate_queryset(sections, lang_code)
-        return AboutUsSectionResponseSerializer(
-            sections, many=True, context=self.context
         ).data
