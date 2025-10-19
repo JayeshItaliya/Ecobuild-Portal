@@ -192,6 +192,44 @@ Content-Type: application/json
 }
 ```
 
+#### FormData Request (With File Uploads)
+
+For file uploads, use `multipart/form-data` with the following format:
+
+```http
+POST /api/cms/about-us/create/
+Authorization: Bearer YOUR_TOKEN
+Content-Type: multipart/form-data
+```
+
+**Key Points:**
+- Send JSON data as strings for nested/translatable fields
+- Send file uploads separately using a specific naming convention
+- Files for nested arrays (team_members, timeline, achievements) are sent with index-based naming
+
+**FormData Fields:**
+```
+hero_title: '{"en": "Welcome to Ecobuild"}'
+company_name: '{"en": "Ecobuild Solutions"}'
+hero_image: [file object]
+company_logo: [file object]
+
+team_members: '[{"full_name": "John Doe", "job_title": {"en": "CEO"}, "bio": {"en": "..."}}]'
+team_members_0_profile_image: [file object]  // For first team member's profile image
+
+timeline: '[{"year": 2004, "title": {"en": "Founded"}, "description": {"en": "..."}}]'
+timeline_0_image: [file object]  // For first timeline entry's image
+
+achievements: '[{"title": {"en": "Award"}, "year": 2019}]'
+achievements_0_certificate_image: [file object]  // For first achievement's certificate
+```
+
+**File Upload Naming Convention:**
+- `team_members_{index}_profile_image` - Team member profile images
+- `timeline_{index}_image` - Timeline entry images
+- `achievements_{index}_certificate_image` - Achievement certificates
+- Use index positions (0, 1, 2, etc.) for multiple items
+
 #### Response (201)
 ```json
 {
@@ -338,6 +376,82 @@ const getAboutUs = async (language = 'en') => {
 
   const result = await response.json();
   return result.data;
+};
+
+// Create About Us page with FormData (file uploads)
+const createAboutUsWithFiles = async (data, files) => {
+  try {
+    const formData = new FormData();
+
+    // Add JSON fields as strings
+    formData.append('hero_title', JSON.stringify(data.hero_title));
+    formData.append('company_name', JSON.stringify(data.company_name));
+
+    // Add main page files
+    if (files.hero_image) {
+      formData.append('hero_image', files.hero_image);
+    }
+    if (files.company_logo) {
+      formData.append('company_logo', files.company_logo);
+    }
+
+    // Add nested arrays as JSON strings
+    if (data.team_members) {
+      formData.append('team_members', JSON.stringify(data.team_members));
+
+      // Add team member files with naming convention
+      data.team_members.forEach((_, index) => {
+        const fileKey = `team_members_${index}_profile_image`;
+        if (files[fileKey]) {
+          formData.append(fileKey, files[fileKey]);
+        }
+      });
+    }
+
+    if (data.timeline) {
+      formData.append('timeline', JSON.stringify(data.timeline));
+
+      // Add timeline files with naming convention
+      data.timeline.forEach((_, index) => {
+        const fileKey = `timeline_${index}_image`;
+        if (files[fileKey]) {
+          formData.append(fileKey, files[fileKey]);
+        }
+      });
+    }
+
+    if (data.achievements) {
+      formData.append('achievements', JSON.stringify(data.achievements));
+
+      // Add achievement files with naming convention
+      data.achievements.forEach((_, index) => {
+        const fileKey = `achievements_${index}_certificate_image`;
+        if (files[fileKey]) {
+          formData.append(fileKey, files[fileKey]);
+        }
+      });
+    }
+
+    const response = await fetch('/api/cms/about-us/create/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type for FormData, let browser set it
+      },
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (result.code >= 400) {
+      throw new Error(result.message);
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Error creating About Us with files:', error);
+    throw error;
+  }
 };
 ```
 

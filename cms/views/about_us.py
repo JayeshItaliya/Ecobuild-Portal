@@ -36,9 +36,16 @@ USAGE EXAMPLES (Frontend):
     formData.append('hero_title', JSON.stringify({ en: "Welcome to Ecobuild" }));
     formData.append('company_name', JSON.stringify({ en: "Ecobuild Solutions" }));
     formData.append('hero_image', fileInput.files[0]); // File upload
+
+    // Team members data as JSON string (no files in nested structure)
     formData.append('team_members', JSON.stringify([
         { full_name: "John Doe", job_title: { en: "CEO" }, bio: { en: "..." } }
     ]));
+
+    // Separate file uploads using naming convention: array_field_index_file_field
+    formData.append('team_members_0_profile_image', profileImageFile); // For first team member's profile image
+    formData.append('timeline_0_image', timelineImageFile); // For first timeline entry's image
+    formData.append('achievements_0_certificate_image', certificateFile); // For first achievement's certificate
 
     const response = await fetch('/api/cms/about-us/create/', {
         method: 'POST',
@@ -80,11 +87,20 @@ from cms.serializers.about_us_serializer import AboutUsPageUnifiedSerializer
 def parse_form_data_for_about_us(data):
     """
     Parse FormData to handle JSON strings for nested fields and translatable fields.
+    Also handles separate file uploads for nested arrays using naming convention.
 
     This function converts JSON strings from FormData into proper Python objects
     for nested fields like team_members, timeline, achievements, and translatable fields.
+
+    File upload naming convention supported:
+    - team_members_{index}_profile_image
+    - timeline_{index}_image
+    - achievements_{index}_certificate_image
+
+    Where {index} is the array position (0, 1, 2, etc.)
     """
     parsed_data = {}
+    separate_files = {}  # Store separate file uploads for later mapping
 
     # Fields that should be parsed as JSON (translatable fields and nested lists)
     json_fields = [
@@ -104,7 +120,10 @@ def parse_form_data_for_about_us(data):
     ]
 
     for key, value in data.items():
-        if key in json_fields and isinstance(value, str):
+        # Check if this is a separate file upload with naming convention
+        if _is_nested_file_field(key):
+            separate_files[key] = value
+        elif key in json_fields and isinstance(value, str):
             # Only parse if it looks like JSON (starts with { or [)
             if value.strip().startswith(("{", "[")):
                 try:
@@ -117,6 +136,77 @@ def parse_form_data_for_about_us(data):
                 parsed_data[key] = value
         else:
             parsed_data[key] = value
+
+    # Map separate file uploads to nested arrays
+    if separate_files:
+        parsed_data = _map_separate_files_to_nested_arrays(parsed_data, separate_files)
+
+    return parsed_data
+
+
+def _is_nested_file_field(field_name):
+    """
+    Check if field name follows the nested file naming convention.
+
+    Supported patterns:
+    - team_members_{index}_profile_image
+    - timeline_{index}_image
+    - achievements_{index}_certificate_image
+    """
+    import re
+
+    patterns = [
+        r"^team_members_\d+_profile_image$",
+        r"^timeline_\d+_image$",
+        r"^achievements_\d+_certificate_image$",
+    ]
+
+    return any(re.match(pattern, field_name) for pattern in patterns)
+
+
+def _map_separate_files_to_nested_arrays(parsed_data, separate_files):
+    """
+    Map separate file uploads to their correct positions in nested arrays.
+
+    Args:
+        parsed_data: The main parsed data dictionary
+        separate_files: Dictionary of separate file uploads with naming convention
+    """
+    import re
+
+    for field_name, file_obj in separate_files.items():
+        if field_name.startswith("team_members_"):
+            # Extract index from team_members_{index}_profile_image
+            match = re.match(r"team_members_(\d+)_profile_image", field_name)
+            if match and "team_members" in parsed_data:
+                index = int(match.group(1))
+                if (
+                    isinstance(parsed_data["team_members"], list)
+                    and len(parsed_data["team_members"]) > index
+                ):
+                    parsed_data["team_members"][index]["profile_image"] = file_obj
+
+        elif field_name.startswith("timeline_"):
+            # Extract index from timeline_{index}_image
+            match = re.match(r"timeline_(\d+)_image", field_name)
+            if match and "timeline" in parsed_data:
+                index = int(match.group(1))
+                if (
+                    isinstance(parsed_data["timeline"], list)
+                    and len(parsed_data["timeline"]) > index
+                ):
+                    parsed_data["timeline"][index]["image"] = file_obj
+
+        elif field_name.startswith("achievements_"):
+            # Extract index from achievements_{index}_certificate_image
+            match = re.match(r"achievements_(\d+)_certificate_image", field_name)
+            if match and "achievements" in parsed_data:
+                index = int(match.group(1))
+                if (
+                    isinstance(parsed_data["achievements"], list)
+                    and len(parsed_data["achievements"]) > index
+                ):
+                    parsed_data["achievements"][index]["certificate_image"] = file_obj
 
     return parsed_data
 
@@ -194,9 +284,15 @@ def create_about_us(request):
     - JSON: Send Content-Type: application/json with JSON payload
     - FormData: Send Content-Type: multipart/form-data with JSON strings for nested fields
 
-    For FormData, send JSON strings for nested/translatable fields:
+    For FormData, send JSON strings for nested/translatable fields and separate files:
     - hero_title='{"en": "Welcome", "ar": "مرحبا"}'
     - team_members='[{"full_name": "John", "job_title": {"en": "CEO"}}]'
+
+    File uploads for nested arrays use naming convention:
+    - team_members_0_profile_image (for first team member's profile image)
+    - timeline_0_image (for first timeline entry's image)
+    - achievements_0_certificate_image (for first achievement's certificate image)
+    - Use index positions (0, 1, 2, etc.) for multiple items
 
     Request body can include:
     {
@@ -327,9 +423,15 @@ def update_about_us(request, pk):
     - JSON: Send Content-Type: application/json with JSON payload
     - FormData: Send Content-Type: multipart/form-data with JSON strings for nested fields
 
-    For FormData, send JSON strings for nested/translatable fields:
+    For FormData, send JSON strings for nested/translatable fields and separate files:
     - hero_title='{"en": "Welcome", "ar": "مرحبا"}'
     - team_members='[{"full_name": "John", "job_title": {"en": "CEO"}}]'
+
+    File uploads for nested arrays use naming convention:
+    - team_members_0_profile_image (for first team member's profile image)
+    - timeline_0_image (for first timeline entry's image)
+    - achievements_0_certificate_image (for first achievement's certificate image)
+    - Use index positions (0, 1, 2, etc.) for multiple items
 
     Can update:
     - About Us page content

@@ -32,9 +32,11 @@ EXAMPLE REQUEST (Create everything):
 FORM DATA SUPPORT:
     Now supports FormData for file uploads with JSON strings for nested fields:
     - hero_image, company_logo for main page
-    - profile_image for team members
-    - image for timeline items
-    - certificate_image for achievements
+    - Separate file uploads for nested arrays using naming convention:
+      * team_members_{index}_profile_image (for team member profile images)
+      * timeline_{index}_image (for timeline entry images)
+      * achievements_{index}_certificate_image (for achievement certificates)
+      * Use index positions (0, 1, 2, etc.) for multiple items
 """
 
 import logging
