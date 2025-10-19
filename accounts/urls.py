@@ -2,20 +2,23 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.serializers.register import ValidateTokenAPIView
-from accounts.views.auth.auth_views import LogoutAPIView
-from accounts.views.auth.auth_views import SigninView
-from accounts.views.auth.facebook import FacebookLogin
-from accounts.views.auth.google_auth import GoogleLoginView
-from accounts.views.auth.password_view import ChangePasswordAPIView
-from accounts.views.auth.password_view import ForgotPasswordView
-from accounts.views.auth.password_view import PasswordResetConfirmAPIView
-from accounts.views.auth.registration_views import SignupView
+from accounts.views.account.account_views import LogoutAPIView
+from accounts.views.account.account_views import SigninView
+# from accounts.views.account.facebook import FacebookLogin
+from accounts.views.account.google_auth import GoogleLoginView
+from accounts.views.account.password_view import ChangePasswordAPIView
+from accounts.views.account.password_view import ForgotPasswordView
+from accounts.views.account.password_view import PasswordResetConfirmAPIView
+from accounts.views.account.registration_views import SignupView
+from accounts.views.company_info import CompanyInfoCreateAPIView
+from accounts.views.company_info import CompanyInfoRetrieveUpdateAPIView
 from accounts.views.user.team_members import TeamMemberListAPIView
 from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
+from accounts.views.user_activity_log import UserActivityLogListAPIView
 
 urlpatterns = [
-    path("facebook/", FacebookLogin.as_view(), name="facebook_login"),
+    # path("facebook/", FacebookLogin.as_view(), name="facebook_login"),
     path("signup/", SignupView.as_view(), name="signup"),
     path("signin/", SigninView.as_view(), name="signin"),
     path("logout/", LogoutAPIView.as_view(), name="logout"),
@@ -48,8 +51,21 @@ urlpatterns = [
         name="role-detail",
     ),
     path(
+        "company-info/", CompanyInfoCreateAPIView.as_view(), name="company-info-create"
+    ),
+    path(
+        "company-info/<str:pk>/",
+        CompanyInfoRetrieveUpdateAPIView.as_view(),
+        name="company-info-retrieve-update",
+    ),
+    path(
         "google/login/",
         GoogleLoginView.as_view(),
         name="google-login",
+    ),
+    path(
+        "user-activity/",
+        UserActivityLogListAPIView.as_view(),
+        name="user-activity",
     ),
 ]

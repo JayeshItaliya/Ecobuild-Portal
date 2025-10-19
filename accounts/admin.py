@@ -2,7 +2,8 @@
 
 from django.contrib import admin
 
-from .models import Product
+from .models import ActivityLog
+from .models import CompanyInfo
 from .models import Role
 from .models import User
 
@@ -21,7 +22,12 @@ class RoleAdmin(admin.ModelAdmin):
     ordering = ("id",)
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description")
-    ordering = ("id",)
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "details", "action",  "time_stamp")
+    ordering = ("-time_stamp",)
+
+
+@admin.register(CompanyInfo)
+class CompanyInfoAdmin(admin.ModelAdmin):
+    list_display = ("id", "address", "phone", "email")

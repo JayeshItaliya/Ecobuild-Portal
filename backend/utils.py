@@ -1,9 +1,12 @@
 import jwt
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
+from accounts.models import ActivityLog
 from accounts.models import User
 from backend import settings
 
@@ -43,17 +46,25 @@ class ApiRenderer(JSONRenderer):
         response_dict["code"] = response_status
 
         # Check for serializer errors in the renderer context
-        if response_status >= 400:
+        # Only try to extract error messages if we don't already have a meaningful message
+        if response_status >= 400 and (
+            not response_dict["message"] or response_dict["message"] == ""
+        ):
             errors = response.data
             if isinstance(errors, dict):
-                # Get the first error message in the dictionary, if any
-                for value in errors.values():
-                    if isinstance(value, list) and value:
-                        response_dict["message"] = str(value[0])
-                        break
-                    if not isinstance(value, list):
-                        response_dict["message"] = str(value)
-                        break
+                # Skip if this looks like a structured response with explicit message
+                if "status_code" in errors and "message" in errors:
+                    # This is a structured response, don't override the message
+                    pass
+                else:
+                    # Get the first error message in the dictionary, if any
+                    for value in errors.values():
+                        if isinstance(value, list) and value:
+                            response_dict["message"] = str(value[0])
+                            break
+                        if not isinstance(value, list):
+                            response_dict["message"] = str(value)
+                            break
 
         # Render the response dictionary as JSON
         return super().render(response_dict, accepted_media_type, renderer_context)
@@ -99,3 +110,69 @@ def token_validation(token):
 class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
+
+    def get_paginated_response(self, data):
+        return Response(
+            {
+                "total_count": self.page.paginator.count,
+                "count": len(data),  # ✅ total count is here
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
+
+
+def create_audit_log(
+    user, module, action, object_id=None, details=None, description=None
+):
+    """
+    Utility function to create an audit log entry.
+
+    :param user: The user who performed the action
+    :param module: The name of the module where the action occurred
+    :param action: The action type (create, edit, delete)
+    :param object_id: ID of the affected object (optional)
+    :param details: Additional details in JSON format (optional)
+    :param description: Human-readable description of the action (optional)
+    :return: The created AuditLog object
+    """
+    # Create a new audit log entry
+    audit_log = ActivityLog.objects.create(
+        user=user,
+        module=module if module else None,
+        action=action,
+        object_id=object_id,
+        details=details,
+    )
+
+    return audit_log
+
+
+def generic_response(
+    data=None, message=None, error_message=None, status_code=status.HTTP_200_OK
+):
+    """
+    Generates a standardized HTTP response with a given status code, message, optional data, and
+    optional developer-specific error message.
+
+    Args:
+        status_code (int, optional): HTTP status code for the response. Defaults to 200 (OK).
+        message (str, optional): Message to include in the response body. Defaults to None.
+        data (any, optional): Additional data to include in the response body. Defaults to None.
+        dev_error_message (str, optional): A developer-specific error message for debugging.
+                                           Defaults to None.
+
+    Returns:
+        Response: A DRF (Django Rest Framework) Response object with 'statusCode', 'message',
+        'data', and optionally 'dev_error' fields.
+    """
+    response_body = {
+        "status_code": status_code,
+        "message": message,
+        "data": data,
+    }
+    # Only include the dev_error field if a message is provided
+    if error_message:
+        response_body["error"] = error_message
+    return Response(response_body, status=status_code)

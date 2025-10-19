@@ -162,3 +162,15 @@ media/
 
 # VS Code launch settings
 .vscode/launch.json
+
+# Google Cloud Credentials (IMPORTANT: Never commit these!)
+google-credentials.json
+*-credentials.json
+service-account.json
+gcp-*.json
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local

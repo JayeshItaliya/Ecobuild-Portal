@@ -1,8 +1,9 @@
-from backend.serializer import MyTokenObtainPairSerializer
 from rest_framework.serializers import CharField
 from rest_framework.serializers import Serializer
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.serializers import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from backend.serializer import MyTokenObtainPairSerializer
 
 
 class SignInUserSerializer(MyTokenObtainPairSerializer):

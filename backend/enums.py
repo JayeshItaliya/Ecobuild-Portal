@@ -36,3 +36,12 @@ class VerificationStatusChoices(BaseStatusChoices):
     PENDING = "pending", "Pending"
     ACCEPTED = "accepted", "Accepted"
     REJECTED = "rejected", "Rejected"
+
+
+class ActionType(models.TextChoices):
+    """ENUM for action types"""
+
+    CREATE = "CREATE", ("Create")
+    UPDATE = "UPDATE", ("Update")
+    DELETE = "DELETE", ("Delete")
+    VIEW = "VIEW", ("View")

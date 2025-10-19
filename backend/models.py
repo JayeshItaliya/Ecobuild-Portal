@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from backend import settings
 from backend.manager import SoftDeletionManager
+from utils.model_translation import AutoTranslateMixin
 
 
 class SoftDeleteBaseModel(models.Model):
@@ -118,3 +119,12 @@ class BaseModel(SoftDeleteBaseModel):
 
     class Meta:
         abstract = True
+
+
+class BaseTranslatableModel(BaseModel, AutoTranslateMixin):
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.auto_translate_fields()
+        super().save(*args, **kwargs)
