@@ -28,7 +28,16 @@ EXAMPLE REQUEST (Create everything):
         "achievements": [...],
         "sections": [...]
     }
+
+FORM DATA SUPPORT:
+    Now supports FormData for file uploads with JSON strings for nested fields:
+    - hero_image, company_logo for main page
+    - profile_image for team members
+    - image for timeline items
+    - certificate_image for achievements
 """
+
+import logging
 
 from django.db import transaction
 from rest_framework import serializers
@@ -38,6 +47,8 @@ from cms.models.about_us import AboutUsPage
 from cms.models.about_us import CompanyAchievement
 from cms.models.about_us import CompanyTimeline
 from cms.models.about_us import TeamMember
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # NESTED SERIALIZERS FOR RELATED DATA

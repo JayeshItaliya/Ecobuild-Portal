@@ -8,8 +8,9 @@ API ENDPOINTS:
     PATCH  /api/cms/about-us/{id}/update/  - Update everything in one call (admin, requires auth)
     DELETE /api/cms/about-us/{id}/delete/  - Delete About Us page (admin, requires auth)
 
-USAGE EXAMPLE (Frontend):
-    // Create complete About Us page with all data
+USAGE EXAMPLES (Frontend):
+
+    // JSON Request (No file uploads)
     const response = await fetch('/api/cms/about-us/create/', {
         method: 'POST',
         headers: {
@@ -30,6 +31,21 @@ USAGE EXAMPLE (Frontend):
         })
     });
 
+    // FormData Request (With file uploads)
+    const formData = new FormData();
+    formData.append('hero_title', JSON.stringify({ en: "Welcome to Ecobuild" }));
+    formData.append('company_name', JSON.stringify({ en: "Ecobuild Solutions" }));
+    formData.append('hero_image', fileInput.files[0]); // File upload
+    formData.append('team_members', JSON.stringify([
+        { full_name: "John Doe", job_title: { en: "CEO" }, bio: { en: "..." } }
+    ]));
+
+    const response = await fetch('/api/cms/about-us/create/', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer YOUR_TOKEN' },
+        body: formData // No Content-Type header needed for FormData
+    });
+
     // Get About Us in Hebrew
     const response = await fetch('/api/cms/about-us/', {
         headers: { 'Accept-Language': 'he' }
@@ -41,8 +57,10 @@ FEATURES:
     ✅ Automatic translation to Hebrew, Russian, Arabic
     ✅ Response includes all related data with translations
     ✅ Language selection via Accept-Language header
+    ✅ Supports both JSON and FormData for file uploads
 """
 
+import json
 import logging
 
 from rest_framework import serializers
@@ -57,6 +75,50 @@ from backend.utils import generic_response
 from cms.models.about_us import AboutUsPage
 from cms.serializers.about_us_serializer import AboutUsPageResponseSerializer
 from cms.serializers.about_us_serializer import AboutUsPageUnifiedSerializer
+
+
+def parse_form_data_for_about_us(data):
+    """
+    Parse FormData to handle JSON strings for nested fields and translatable fields.
+
+    This function converts JSON strings from FormData into proper Python objects
+    for nested fields like team_members, timeline, achievements, and translatable fields.
+    """
+    parsed_data = {}
+
+    # Fields that should be parsed as JSON (translatable fields and nested lists)
+    json_fields = [
+        "hero_title",
+        "hero_subtitle",
+        "company_name",
+        "company_description",
+        "mission_statement",
+        "vision_statement",
+        "our_story_title",
+        "our_story_content",
+        "meta_title",
+        "meta_description",
+        "team_members",
+        "timeline",
+        "achievements",
+    ]
+
+    for key, value in data.items():
+        if key in json_fields and isinstance(value, str):
+            # Only parse if it looks like JSON (starts with { or [)
+            if value.strip().startswith(("{", "[")):
+                try:
+                    parsed_data[key] = json.loads(value)
+                except (json.JSONDecodeError, TypeError) as e:
+                    logging.warning(f"Failed to parse JSON for field {key}: {e}")
+                    # Keep the original string value if parsing fails
+                    parsed_data[key] = value
+            else:
+                parsed_data[key] = value
+        else:
+            parsed_data[key] = value
+
+    return parsed_data
 
 
 @api_view(["GET"])
@@ -128,6 +190,14 @@ def create_about_us(request):
 
     Authentication required (admin only).
 
+    SUPPORTS BOTH JSON AND FORMDATA:
+    - JSON: Send Content-Type: application/json with JSON payload
+    - FormData: Send Content-Type: multipart/form-data with JSON strings for nested fields
+
+    For FormData, send JSON strings for nested/translatable fields:
+    - hero_title='{"en": "Welcome", "ar": "مرحبا"}'
+    - team_members='[{"full_name": "John", "job_title": {"en": "CEO"}}]'
+
     Request body can include:
     {
       "hero_title": {"en": "Welcome..."},
@@ -172,9 +242,34 @@ def create_about_us(request):
                 status_code=status.HTTP_409_CONFLICT,
             )
 
+        # Parse FormData if needed (for file uploads and JSON strings)
+        data = request.data
+        content_type = getattr(request, "content_type", "") or request.META.get(
+            "CONTENT_TYPE", ""
+        )
+
+        # Check if this is FormData and needs JSON parsing
+        # Also check if we have any string values that look like JSON for known fields
+        is_form_data = "multipart/form-data" in content_type
+        has_json_strings = any(
+            isinstance(data.get(key), str)
+            and data.get(key, "").strip().startswith(("{", "["))
+            for key in [
+                "hero_title",
+                "company_name",
+                "team_members",
+                "timeline",
+                "achievements",
+            ]
+            if key in data
+        )
+
+        if is_form_data or has_json_strings:
+            data = parse_form_data_for_about_us(data)
+
         # Validate the data first
         serializer = AboutUsPageUnifiedSerializer(
-            data=request.data, context={"request": request}
+            data=data, context={"request": request}
         )
 
         if not serializer.is_valid():
@@ -228,6 +323,14 @@ def update_about_us(request, pk):
 
     Authentication required (admin only).
 
+    SUPPORTS BOTH JSON AND FORMDATA:
+    - JSON: Send Content-Type: application/json with JSON payload
+    - FormData: Send Content-Type: multipart/form-data with JSON strings for nested fields
+
+    For FormData, send JSON strings for nested/translatable fields:
+    - hero_title='{"en": "Welcome", "ar": "مرحبا"}'
+    - team_members='[{"full_name": "John", "job_title": {"en": "CEO"}}]'
+
     Can update:
     - About Us page content
     - Team members (replaces all existing)
@@ -242,9 +345,34 @@ def update_about_us(request, pk):
     try:
         about_us_page = AboutUsPage.objects.get(id=pk)
 
+        # Parse FormData if needed (for file uploads and JSON strings)
+        data = request.data
+        content_type = getattr(request, "content_type", "") or request.META.get(
+            "CONTENT_TYPE", ""
+        )
+
+        # Check if this is FormData and needs JSON parsing
+        # Also check if we have any string values that look like JSON for known fields
+        is_form_data = "multipart/form-data" in content_type
+        has_json_strings = any(
+            isinstance(data.get(key), str)
+            and data.get(key, "").strip().startswith(("{", "["))
+            for key in [
+                "hero_title",
+                "company_name",
+                "team_members",
+                "timeline",
+                "achievements",
+            ]
+            if key in data
+        )
+
+        if is_form_data or has_json_strings:
+            data = parse_form_data_for_about_us(data)
+
         serializer = AboutUsPageUnifiedSerializer(
             about_us_page,
-            data=request.data,
+            data=data,
             partial=True,
             context={"request": request},
         )
