@@ -93,12 +93,21 @@ def parse_form_data_for_about_us(data):
     for nested fields like team_members, timeline, achievements, and translatable fields.
 
     File upload naming convention supported:
-    - team_members_{index}_profile_image
-    - timeline_{index}_image
-    - achievements_{index}_certificate_image
+    - team_members_{index}_profile_image (new format)
+    - timeline_{index}_image (new format)
+    - achievements_{index}_certificate_image (new format)
+    - team_members[{index}][profile_image] (legacy format)
+    - timeline[{index}][image] (legacy format)
+    - achievements[{index}][certificate] (legacy format)
 
     Where {index} is the array position (0, 1, 2, etc.)
     """
+    if not isinstance(data, dict):
+        logging.error(
+            f"Expected dict but got {type(data)} in parse_form_data_for_about_us"
+        )
+        return {}
+
     parsed_data = {}
     separate_files = {}  # Store separate file uploads for later mapping
 
@@ -120,21 +129,32 @@ def parse_form_data_for_about_us(data):
     ]
 
     for key, value in data.items():
-        # Check if this is a separate file upload with naming convention
-        if _is_nested_file_field(key):
-            separate_files[key] = value
-        elif key in json_fields and isinstance(value, str):
-            # Only parse if it looks like JSON (starts with { or [)
-            if value.strip().startswith(("{", "[")):
-                try:
-                    parsed_data[key] = json.loads(value)
-                except (json.JSONDecodeError, TypeError) as e:
-                    logging.warning(f"Failed to parse JSON for field {key}: {e}")
-                    # Keep the original string value if parsing fails
+        try:
+            # Ensure key is a string and handle potential Unicode issues
+            if not isinstance(key, str):
+                key = str(key)
+
+            # Check if this is a separate file upload with naming convention
+            if _is_nested_file_field(key):
+                separate_files[key] = value
+            elif key in json_fields and isinstance(value, str):
+                # Only parse if it looks like JSON (starts with { or [)
+                if value.strip().startswith(("{", "[")):
+                    try:
+                        # Handle potential encoding issues
+                        parsed_value = json.loads(value)
+                        parsed_data[key] = parsed_value
+                    except (json.JSONDecodeError, TypeError, UnicodeDecodeError) as e:
+                        logging.warning(f"Failed to parse JSON for field {key}: {e}")
+                        # Keep the original string value if parsing fails
+                        parsed_data[key] = value
+                else:
                     parsed_data[key] = value
             else:
                 parsed_data[key] = value
-        else:
+        except Exception as e:
+            logging.error(f"Error processing field {key}: {e}")
+            # Include the field as-is to prevent data loss
             parsed_data[key] = value
 
     # Map separate file uploads to nested arrays
@@ -149,19 +169,34 @@ def _is_nested_file_field(field_name):
     Check if field name follows the nested file naming convention.
 
     Supported patterns:
-    - team_members_{index}_profile_image
-    - timeline_{index}_image
-    - achievements_{index}_certificate_image
+    - team_members_{index}_profile_image (new format)
+    - timeline_{index}_image (new format)
+    - achievements_{index}_certificate_image (new format)
+    - team_members[{index}][profile_image] (legacy format)
+    - timeline[{index}][image] (legacy format)
+    - achievements[{index}][certificate] (legacy format)
     """
     import re
 
-    patterns = [
+    # New format patterns
+    new_patterns = [
         r"^team_members_\d+_profile_image$",
         r"^timeline_\d+_image$",
         r"^achievements_\d+_certificate_image$",
     ]
 
-    return any(re.match(pattern, field_name) for pattern in patterns)
+    # Legacy bracket notation patterns
+    legacy_patterns = [
+        r"^team_members\[\d+\]\[profile_image\]$",
+        r"^timeline\[\d+\]\[image\]$",
+        r"^timeline\[\d+\]\[timeline_image\]$",  # Alternative naming
+        r"^achievements\[\d+\]\[certificate\]$",
+        r"^achievements\[\d+\]\[certificate_image\]$",  # Alternative naming
+    ]
+
+    return any(re.match(pattern, field_name) for pattern in new_patterns) or any(
+        re.match(pattern, field_name) for pattern in legacy_patterns
+    )
 
 
 def _map_separate_files_to_nested_arrays(parsed_data, separate_files):
@@ -174,39 +209,113 @@ def _map_separate_files_to_nested_arrays(parsed_data, separate_files):
     """
     import re
 
+    if not isinstance(parsed_data, dict) or not isinstance(separate_files, dict):
+        logging.error(
+            f"Invalid input types: parsed_data={type(parsed_data)}, separate_files={type(separate_files)}"
+        )
+        return parsed_data
+
     for field_name, file_obj in separate_files.items():
-        if field_name.startswith("team_members_"):
-            # Extract index from team_members_{index}_profile_image
-            match = re.match(r"team_members_(\d+)_profile_image", field_name)
-            if match and "team_members" in parsed_data:
-                index = int(match.group(1))
-                if (
-                    isinstance(parsed_data["team_members"], list)
-                    and len(parsed_data["team_members"]) > index
-                ):
-                    parsed_data["team_members"][index]["profile_image"] = file_obj
+        try:
+            if not isinstance(field_name, str):
+                logging.warning(
+                    f"Non-string field name: {field_name} ({type(field_name)})"
+                )
+                continue
 
-        elif field_name.startswith("timeline_"):
-            # Extract index from timeline_{index}_image
-            match = re.match(r"timeline_(\d+)_image", field_name)
-            if match and "timeline" in parsed_data:
-                index = int(match.group(1))
-                if (
-                    isinstance(parsed_data["timeline"], list)
-                    and len(parsed_data["timeline"]) > index
-                ):
-                    parsed_data["timeline"][index]["image"] = file_obj
+            # Handle new format: team_members_0_profile_image
+            if field_name.startswith("team_members_") and field_name.endswith(
+                "_profile_image"
+            ):
+                match = re.match(r"team_members_(\d+)_profile_image", field_name)
+                if match and "team_members" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["team_members"], list)
+                        and len(parsed_data["team_members"]) > index
+                        and isinstance(parsed_data["team_members"][index], dict)
+                    ):
+                        parsed_data["team_members"][index]["profile_image"] = file_obj
 
-        elif field_name.startswith("achievements_"):
-            # Extract index from achievements_{index}_certificate_image
-            match = re.match(r"achievements_(\d+)_certificate_image", field_name)
-            if match and "achievements" in parsed_data:
-                index = int(match.group(1))
-                if (
-                    isinstance(parsed_data["achievements"], list)
-                    and len(parsed_data["achievements"]) > index
-                ):
-                    parsed_data["achievements"][index]["certificate_image"] = file_obj
+            # Handle legacy format: team_members[0][profile_image]
+            elif "team_members[" in field_name and "][profile_image]" in field_name:
+                match = re.match(r"team_members\[(\d+)\]\[profile_image\]", field_name)
+                if match and "team_members" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["team_members"], list)
+                        and len(parsed_data["team_members"]) > index
+                        and isinstance(parsed_data["team_members"][index], dict)
+                    ):
+                        parsed_data["team_members"][index]["profile_image"] = file_obj
+
+            # Handle new format: timeline_0_image
+            elif field_name.startswith("timeline_") and field_name.endswith("_image"):
+                match = re.match(r"timeline_(\d+)_image", field_name)
+                if match and "timeline" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["timeline"], list)
+                        and len(parsed_data["timeline"]) > index
+                        and isinstance(parsed_data["timeline"][index], dict)
+                    ):
+                        parsed_data["timeline"][index]["image"] = file_obj
+
+            # Handle legacy format: timeline[0][image] or timeline[0][timeline_image]
+            elif "timeline[" in field_name and (
+                "][image]" in field_name or "][timeline_image]" in field_name
+            ):
+                match = re.match(
+                    r"timeline\[(\d+)\]\[(image|timeline_image)\]", field_name
+                )
+                if match and "timeline" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["timeline"], list)
+                        and len(parsed_data["timeline"]) > index
+                        and isinstance(parsed_data["timeline"][index], dict)
+                    ):
+                        parsed_data["timeline"][index]["image"] = file_obj
+
+            # Handle new format: achievements_0_certificate_image
+            elif field_name.startswith("achievements_") and field_name.endswith(
+                "_certificate_image"
+            ):
+                match = re.match(r"achievements_(\d+)_certificate_image", field_name)
+                if match and "achievements" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["achievements"], list)
+                        and len(parsed_data["achievements"]) > index
+                        and isinstance(parsed_data["achievements"][index], dict)
+                    ):
+                        parsed_data["achievements"][index][
+                            "certificate_image"
+                        ] = file_obj
+
+            # Handle legacy format: achievements[0][certificate] or achievements[0][certificate_image]
+            elif "achievements[" in field_name and (
+                "][certificate]" in field_name or "][certificate_image]" in field_name
+            ):
+                match = re.match(
+                    r"achievements\[(\d+)\]\[(certificate|certificate_image)\]",
+                    field_name,
+                )
+                if match and "achievements" in parsed_data:
+                    index = int(match.group(1))
+                    if (
+                        isinstance(parsed_data["achievements"], list)
+                        and len(parsed_data["achievements"]) > index
+                        and isinstance(parsed_data["achievements"][index], dict)
+                    ):
+                        parsed_data["achievements"][index][
+                            "certificate_image"
+                        ] = file_obj
+
+        except Exception as e:
+            logging.error(f"Error mapping file {field_name}: {e}")
+            # Continue processing other files even if one fails
+            continue
 
     return parsed_data
 
@@ -361,7 +470,24 @@ def create_about_us(request):
         )
 
         if is_form_data or has_json_strings:
-            data = parse_form_data_for_about_us(data)
+            try:
+                data = parse_form_data_for_about_us(data)
+            except UnicodeDecodeError as e:
+                logging.error(
+                    f"UnicodeDecodeError in parse_form_data_for_about_us: {e}"
+                )
+                return generic_response(
+                    message="Error parsing form data - invalid encoding",
+                    data={"error": str(e), "content_type": content_type},
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                logging.error(f"Error in parse_form_data_for_about_us: {e}")
+                return generic_response(
+                    message="Error parsing form data",
+                    data={"error": str(e), "content_type": content_type},
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
         # Validate the data first
         serializer = AboutUsPageUnifiedSerializer(
@@ -470,7 +596,24 @@ def update_about_us(request, pk):
         )
 
         if is_form_data or has_json_strings:
-            data = parse_form_data_for_about_us(data)
+            try:
+                data = parse_form_data_for_about_us(data)
+            except UnicodeDecodeError as e:
+                logging.error(
+                    f"UnicodeDecodeError in parse_form_data_for_about_us (update): {e}"
+                )
+                return generic_response(
+                    message="Error parsing form data - invalid encoding",
+                    data={"error": str(e), "content_type": content_type},
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                logging.error(f"Error in parse_form_data_for_about_us (update): {e}")
+                return generic_response(
+                    message="Error parsing form data",
+                    data={"error": str(e), "content_type": content_type},
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
         serializer = AboutUsPageUnifiedSerializer(
             about_us_page,
