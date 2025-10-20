@@ -245,8 +245,13 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
         """Create team members."""
         serializer = TeamMemberNestedSerializer(data=team_members_data, many=True)
         if serializer.is_valid():
-            for member_data in serializer.validated_data:
-                TeamMember.objects.create(**member_data, created_by=user)
+            # Use serializer.save() for proper file handling, then set created_by
+            team_members = serializer.save()
+            if user:
+                # Update created_by for all team members
+                TeamMember.objects.filter(
+                    id__in=[member.id for member in team_members]
+                ).update(created_by=user)
         else:
             raise serializers.ValidationError(
                 f"Team members validation error: {serializer.errors}"
@@ -263,8 +268,13 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
         """Create timeline entries."""
         serializer = CompanyTimelineNestedSerializer(data=timeline_data, many=True)
         if serializer.is_valid():
-            for entry_data in serializer.validated_data:
-                CompanyTimeline.objects.create(**entry_data, created_by=user)
+            # Use serializer.save() for proper file handling, then set created_by
+            timeline_entries = serializer.save()
+            if user:
+                # Update created_by for all timeline entries
+                CompanyTimeline.objects.filter(
+                    id__in=[entry.id for entry in timeline_entries]
+                ).update(created_by=user)
         else:
             raise serializers.ValidationError(
                 f"Timeline validation error: {serializer.errors}"
@@ -281,8 +291,13 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
             data=achievements_data, many=True
         )
         if serializer.is_valid():
-            for achievement_data in serializer.validated_data:
-                CompanyAchievement.objects.create(**achievement_data, created_by=user)
+            # Use serializer.save() for proper file handling, then set created_by
+            achievements = serializer.save()
+            if user:
+                # Update created_by for all achievements
+                CompanyAchievement.objects.filter(
+                    id__in=[achievement.id for achievement in achievements]
+                ).update(created_by=user)
         else:
             raise serializers.ValidationError(
                 f"Achievements validation error: {serializer.errors}"
