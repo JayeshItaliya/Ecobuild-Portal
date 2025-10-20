@@ -259,8 +259,10 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
 
     def _update_team_members(self, team_members_data, user):
         """Update team members - replace all existing with new data."""
-        # Delete existing team members
-        TeamMember.objects.all().delete(soft=True, deleted_by_user=user)
+        # Delete existing team members (soft delete)
+        existing_team_members = TeamMember.objects.all()
+        for member in existing_team_members:
+            member.delete(deleted_by_user=user, soft=True)
         # Create new ones
         self._create_team_members(team_members_data, user)
 
@@ -282,7 +284,10 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
 
     def _update_timeline(self, timeline_data, user):
         """Update timeline - replace all existing with new data."""
-        CompanyTimeline.objects.all().delete(soft=True, deleted_by_user=user)
+        # Delete existing timeline entries (soft delete)
+        existing_timeline = CompanyTimeline.objects.all()
+        for entry in existing_timeline:
+            entry.delete(deleted_by_user=user, soft=True)
         self._create_timeline(timeline_data, user)
 
     def _create_achievements(self, achievements_data, user):
@@ -305,7 +310,10 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
 
     def _update_achievements(self, achievements_data, user):
         """Update achievements - replace all existing with new data."""
-        CompanyAchievement.objects.all().delete(soft=True, deleted_by_user=user)
+        # Delete existing achievements (soft delete)
+        existing_achievements = CompanyAchievement.objects.all()
+        for achievement in existing_achievements:
+            achievement.delete(deleted_by_user=user, soft=True)
         self._create_achievements(achievements_data, user)
 
 
