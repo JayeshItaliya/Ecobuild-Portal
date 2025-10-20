@@ -70,6 +70,7 @@ FEATURES:
 import json
 import logging
 
+from django.core.files.uploadedfile import UploadedFile
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -134,21 +135,39 @@ def parse_form_data_for_about_us(data):
             if not isinstance(key, str):
                 key = str(key)
 
-            # Check if this is a separate file upload with naming convention
-            if _is_nested_file_field(key):
+            # Check if this is a file object first
+            if isinstance(value, (UploadedFile, bytes)) or hasattr(value, "read"):
+                # This is a file object, don't try to process it as JSON
+                parsed_data[key] = value
+            elif _is_nested_file_field(key):
+                # Check if this is a separate file upload with naming convention
                 separate_files[key] = value
             elif key in json_fields and isinstance(value, str):
                 # Only parse if it looks like JSON (starts with { or [)
-                if value.strip().startswith(("{", "[")):
-                    try:
-                        # Handle potential encoding issues
-                        parsed_value = json.loads(value)
-                        parsed_data[key] = parsed_value
-                    except (json.JSONDecodeError, TypeError, UnicodeDecodeError) as e:
-                        logging.warning(f"Failed to parse JSON for field {key}: {e}")
-                        # Keep the original string value if parsing fails
+                try:
+                    value_str = value.strip()
+                    if value_str.startswith(("{", "[")):
+                        try:
+                            # Handle potential encoding issues
+                            parsed_value = json.loads(value)
+                            parsed_data[key] = parsed_value
+                        except (
+                            json.JSONDecodeError,
+                            TypeError,
+                            UnicodeDecodeError,
+                        ) as e:
+                            logging.warning(
+                                f"Failed to parse JSON for field {key}: {e}"
+                            )
+                            # Keep the original string value if parsing fails
+                            parsed_data[key] = value
+                    else:
                         parsed_data[key] = value
-                else:
+                except (UnicodeDecodeError, AttributeError) as e:
+                    # If we can't decode or strip the value, it's likely binary data
+                    logging.warning(
+                        f"Cannot process field {key} as string, treating as-is: {e}"
+                    )
                     parsed_data[key] = value
             else:
                 parsed_data[key] = value
@@ -456,18 +475,30 @@ def create_about_us(request):
         # Check if this is FormData and needs JSON parsing
         # Also check if we have any string values that look like JSON for known fields
         is_form_data = "multipart/form-data" in content_type
-        has_json_strings = any(
-            isinstance(data.get(key), str)
-            and data.get(key, "").strip().startswith(("{", "["))
+        has_json_strings = False
+
+        # Safely check for JSON strings without causing UnicodeDecodeError
+        try:
             for key in [
                 "hero_title",
                 "company_name",
                 "team_members",
                 "timeline",
                 "achievements",
-            ]
-            if key in data
-        )
+            ]:
+                if key in data:
+                    value = data.get(key)
+                    if isinstance(value, str):
+                        try:
+                            stripped = value.strip()
+                            if stripped and stripped.startswith(("{", "[")):
+                                has_json_strings = True
+                                break
+                        except (UnicodeDecodeError, AttributeError):
+                            continue
+        except Exception as e:
+            logging.warning(f"Error checking for JSON strings: {e}")
+            has_json_strings = False
 
         if is_form_data or has_json_strings:
             try:
@@ -495,9 +526,12 @@ def create_about_us(request):
         )
 
         if not serializer.is_valid():
+            # Avoid including request.data in response as it may contain file objects
+            # that can't be JSON serialized
+            error_data = {"errors": serializer.errors}
             return generic_response(
                 message="Invalid data provided",
-                data={"errors": serializer.errors, "received_data": request.data},
+                data=error_data,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -582,18 +616,30 @@ def update_about_us(request, pk):
         # Check if this is FormData and needs JSON parsing
         # Also check if we have any string values that look like JSON for known fields
         is_form_data = "multipart/form-data" in content_type
-        has_json_strings = any(
-            isinstance(data.get(key), str)
-            and data.get(key, "").strip().startswith(("{", "["))
+        has_json_strings = False
+
+        # Safely check for JSON strings without causing UnicodeDecodeError
+        try:
             for key in [
                 "hero_title",
                 "company_name",
                 "team_members",
                 "timeline",
                 "achievements",
-            ]
-            if key in data
-        )
+            ]:
+                if key in data:
+                    value = data.get(key)
+                    if isinstance(value, str):
+                        try:
+                            stripped = value.strip()
+                            if stripped and stripped.startswith(("{", "[")):
+                                has_json_strings = True
+                                break
+                        except (UnicodeDecodeError, AttributeError):
+                            continue
+        except Exception as e:
+            logging.warning(f"Error checking for JSON strings: {e}")
+            has_json_strings = False
 
         if is_form_data or has_json_strings:
             try:
