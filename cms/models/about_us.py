@@ -82,7 +82,7 @@ class TeamMember(BaseTranslatableModel):
     """
 
     # Personal Information - Essential only
-    full_name = models.CharField(max_length=255, help_text="Full name")
+    full_name = JSONField(default=dict, help_text="Full name")
     job_title = JSONField(default=dict, help_text="Job title/position")
     bio = JSONField(default=dict, help_text="Biography/description")
 
@@ -101,16 +101,26 @@ class TeamMember(BaseTranslatableModel):
     is_active = models.BooleanField(default=True, help_text="Show on website?")
 
     # Translatable fields
-    TRANSLATABLE_FIELDS = ["job_title", "bio"]
+    TRANSLATABLE_FIELDS = ["full_name", "job_title", "bio"]
 
     class Meta:
         db_table = "team_member"
         verbose_name = "Team Member"
         verbose_name_plural = "Team Members"
-        ordering = ["display_order", "full_name"]
+        ordering = ["display_order", "created_at"]
 
     def __str__(self):
-        return f"{self.full_name} - {self.job_title.get('en', '') if isinstance(self.job_title, dict) else ''}"
+        full_name = (
+            self.full_name.get("en", "Unknown")
+            if isinstance(self.full_name, dict)
+            else str(self.full_name)
+        )
+        job_title = (
+            self.job_title.get("en", "")
+            if isinstance(self.job_title, dict)
+            else str(self.job_title)
+        )
+        return f"{full_name} - {job_title}"
 
 
 class CompanyTimeline(BaseTranslatableModel):

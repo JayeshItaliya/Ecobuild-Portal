@@ -317,6 +317,7 @@ class AboutUsPageUnifiedSerializer(serializers.ModelSerializer):
 class TeamMemberResponseSerializer(serializers.ModelSerializer):
     """Team member with translated content."""
 
+    full_name = TranslatedField()
     job_title = TranslatedField()
     bio = TranslatedField()
 

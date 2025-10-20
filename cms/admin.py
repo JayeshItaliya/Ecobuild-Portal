@@ -97,15 +97,31 @@ class AboutUsPageAdmin(admin.ModelAdmin):
 class TeamMemberAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "full_name",
-        "job_title",
+        "get_full_name_display",
+        "get_job_title_display",
         "is_leadership",
         "is_active",
         "display_order",
     )
     list_filter = ("is_leadership", "is_active")
-    search_fields = ("full_name", "email")
-    ordering = ("display_order", "full_name")
+    search_fields = ()  # JSONField search requires custom implementation
+    ordering = ("display_order", "id")  # Use id instead of full_name for ordering
+
+    def get_full_name_display(self, obj):
+        """Display the full name from JSONField."""
+        if isinstance(obj.full_name, dict):
+            return obj.full_name.get("en", "No name")
+        return str(obj.full_name or "No name")
+
+    get_full_name_display.short_description = "Full Name"
+
+    def get_job_title_display(self, obj):
+        """Display the job title from JSONField."""
+        if isinstance(obj.job_title, dict):
+            return obj.job_title.get("en", "No title")
+        return str(obj.job_title or "No title")
+
+    get_job_title_display.short_description = "Job Title"
 
 
 @admin.register(CompanyTimeline)
