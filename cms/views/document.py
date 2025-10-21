@@ -3,6 +3,8 @@ from rest_framework import viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.filters import SearchFilter
 
+from accounts.permissions import CanViewDocuments
+from accounts.permissions import HasResourcePermission
 from cms.models.document import Document
 from cms.models.document import DocumentAccess
 from cms.serializers.document_serializer import DocumentAccessSerializer
@@ -18,7 +20,23 @@ class DocumentViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
     ordering_fields = ["created_at", "name", "created_by"]
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == "list" or self.action == "retrieve":
+            permission_classes = [CanViewDocuments]
+        elif self.action == "create":
+            permission_classes = [HasResourcePermission("document", "create")]
+        elif self.action in ["update", "partial_update"]:
+            permission_classes = [HasResourcePermission("document", "update")]
+        elif self.action == "destroy":
+            permission_classes = [HasResourcePermission("document", "delete")]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+
+        return [permission() for permission in permission_classes]
 
 
 class DocumentAccessViewSet(viewsets.ModelViewSet):

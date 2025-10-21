@@ -29,7 +29,7 @@ class ProductCategory(BaseTranslatableModel):
 
 class Product(BaseTranslatableModel):
     title = models.JSONField(max_length=255)
-    subtitle = models.JSONField(max_length=255, blank=True, default={"text": ""})
+    subtitle = models.JSONField(max_length=255, blank=True, default=dict)
     category = models.ForeignKey(
         ProductCategory, on_delete=models.CASCADE, related_name="products"
     )
