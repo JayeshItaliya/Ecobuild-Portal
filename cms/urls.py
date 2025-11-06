@@ -27,6 +27,8 @@ from cms.views.gallery.gallery_category import (
 from cms.views.notification import AdminNotificationListAPIView
 from cms.views.product.product import ProductListCreateAPIView
 from cms.views.product.product import ProductRetrieveUpdateDestroyAPIView
+from cms.views.product.product_category import DropdownValuesAPIView
+from cms.views.product.product_category import ProductCategoryDropdownAPIView
 from cms.views.product.product_category import ProductCategoryListCreateAPIView
 from cms.views.product.product_category import (
     ProductCategoryRetrieveUpdateDestroyAPIView,
@@ -136,6 +138,16 @@ urlpatterns = [
         "broadcast-news/<slug:slug>/",
         BroadcastNewsPublicDetailView.as_view(),
         name="broadcast-news-public-detail",
+    ),
+    path(
+        "dropdown-values/",
+        DropdownValuesAPIView.as_view(),
+        name="dropdown-values",
+    ),
+    path(
+        "product-category-dropdown/",
+        ProductCategoryDropdownAPIView.as_view(),
+        name="product-category-dropdown",
     ),
 ]
 

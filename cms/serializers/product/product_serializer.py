@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
@@ -20,14 +21,61 @@ class ProductListSerializer(ModelSerializer):
 
 
 class ProductSectionSerializer(ModelSerializer):
+    """Serializer for reading ProductSection data."""
+
     class Meta:
         model = ProductSection
         fields = "__all__"
 
 
+class ProductGallerySerializer(ModelSerializer):
+    """Serializer for creating/updating ProductGalleryImage."""
+
+    class Meta:
+        model = ProductGalleryImage
+        fields = ["image", "caption"]
+        extra_kwargs = {
+            "image": {"required": True},
+            "caption": {"required": False, "allow_blank": True},
+        }
+
+
+class ProductGalleryResponseSerializer(ModelSerializer):
+    class Meta:
+        model = ProductGalleryImage
+        fields = ["id", "section", "image", "caption"]
+
+
+class ProductSectionWriteSerializer(ModelSerializer):
+    """Serializer for creating/updating ProductSection with nested gallery images."""
+
+    gallery_images = ProductGallerySerializer(
+        many=True, required=False, allow_empty=True
+    )
+
+    class Meta:
+        model = ProductSection
+        fields = [
+            "order",
+            "section_type",
+            "content_text",
+            "content_image",
+            "content_file",
+            "image_position",
+            "gallery_images",
+        ]
+        extra_kwargs = {
+            "content_image": {"required": False, "allow_null": True},
+            "content_file": {"required": False, "allow_null": True},
+            "content_text": {"required": False, "allow_null": True},
+            "image_position": {"required": False},
+        }
+
+
 class ProductSectionResponseSerializer(ModelSerializer):
     content_text = TranslatedField()
     product = ProductListSerializer()
+    gallery_images = ProductGalleryResponseSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProductSection
@@ -40,22 +88,13 @@ class ProductSectionResponseSerializer(ModelSerializer):
             "content_image",
             "content_file",
             "image_position",
+            "gallery_images",
         ]
 
 
-class ProductGallerySerializer(ModelSerializer):
-    class Meta:
-        model = ProductGalleryImage
-        fields = "__all__"
-
-
-class ProductGalleryResponseSerializer(ModelSerializer):
-    class Meta:
-        model = ProductGalleryImage
-        fields = ["id", "section", "image", "caption"]
-
-
 class ProductSerializer(ModelSerializer):
+    """Serializer for creating/updating Product with nested sections."""
+
     category = serializers.PrimaryKeyRelatedField(
         queryset=ProductCategory.objects.all(),
         error_messages={
@@ -63,10 +102,58 @@ class ProductSerializer(ModelSerializer):
             "incorrect_type": "Category must be a valid UUID.",
         },
     )
+    sections = ProductSectionWriteSerializer(
+        many=True, required=False, allow_empty=True
+    )
 
     class Meta:
         model = Product
-        fields = ["title", "subtitle", "category"]
+        fields = ["title", "subtitle", "category", "sections"]
+        extra_kwargs = {
+            "title": {"required": True},
+            "subtitle": {"required": False},
+            "category": {"required": True},
+        }
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """
+        Create Product with all related sections in one transaction.
+        Supports nested section creation with images, files, and gallery images.
+        """
+        try:
+            # Extract nested sections data
+            sections_data = validated_data.pop("sections", [])
+
+            # Create Product
+            product = Product.objects.create(**validated_data)
+
+            # Create sections with their order
+            for index, section_data in enumerate(sections_data):
+                # Extract gallery images if present
+                gallery_images_data = section_data.pop("gallery_images", [])
+
+                # Set order if not provided (use index + 1)
+                if "order" not in section_data or section_data["order"] is None:
+                    section_data["order"] = index + 1
+
+                # Create section
+                section = ProductSection.objects.create(product=product, **section_data)
+
+                # Create gallery images if provided
+                if gallery_images_data:
+                    for gallery_image_data in gallery_images_data:
+                        ProductGalleryImage.objects.create(
+                            section=section, **gallery_image_data
+                        )
+
+            return product
+
+        except Exception as e:
+            # Transaction will be rolled back automatically
+            raise serializers.ValidationError(
+                f"Error creating product with sections: {str(e)}"
+            )
 
 
 class ProductResponseSerializer(ModelSerializer):

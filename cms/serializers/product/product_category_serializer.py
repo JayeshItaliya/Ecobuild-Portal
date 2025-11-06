@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from accounts.mixins import TranslatedField
 from cms.models.product import ProductCategory
 
 
@@ -72,6 +73,24 @@ class ProductCategoryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductCategory
         fields = ["id", "name", "parent", "category_type", "children"]
+
+    def get_children(self, obj):
+        # Pass lang_code from context to each child for translation
+        lang_code = self.context.get("lang_code", "en")
+        children = obj.children.all()
+        serializer = ProductCategoryChildSerializer(
+            children, many=True, context={"lang_code": lang_code}
+        )
+        return serializer.data
+
+
+class DropDownChoicesListSerializer(serializers.ModelSerializer):
+    name = TranslatedField()
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductCategory
+        fields = ["id", "name", "parent", "children"]
 
     def get_children(self, obj):
         # Pass lang_code from context to each child for translation
