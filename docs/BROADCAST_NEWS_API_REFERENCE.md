@@ -41,12 +41,14 @@ GET /api/cms/broadcast-news/
         "title": {"en": "CEO Interview", "ar": "مقابلة الرئيس التنفيذي"},
         "slug": "ceo-interview",
         "channel_name": {"en": "News Network"},
+        "publication_name": {"en": "Business Weekly"},
         "interviewer_name": {"en": "John Smith"},
         "interviewee_name": {"en": "Jane Doe"},
         "interview_date": "2025-10-15",
         "broadcast_date": "2025-10-17T20:00:00Z",
         "description": {"en": "Exclusive interview about company vision"},
         "thumbnail_image": "/media/broadcast_news/thumbnails/image.jpg",
+        "article_url": "https://businessweekly.com/interviews/ceo-2025",
         "status": "Published",
         "views_count": 150,
         "duration": "30 minutes",
@@ -107,12 +109,14 @@ GET /api/cms/broadcast-news/{slug}/
     "title": {"en": "CEO Interview", "ar": "مقابلة الرئيس التنفيذي"},
     "slug": "ceo-interview",
     "channel_name": {"en": "News Network", "ar": "شبكة الأخبار"},
+    "publication_name": {"en": "Business Weekly", "ar": "بزنس ويكلي"},
     "interviewer_name": {"en": "John Smith"},
     "interviewee_name": {"en": "Jane Doe"},
     "interview_date": "2025-10-15",
     "broadcast_date": "2025-10-17T20:00:00Z",
     "description": {"en": "Exclusive interview about the company's future vision"},
     "thumbnail_image": "/media/broadcast_news/thumbnails/interview.jpg",
+    "article_url": "https://businessweekly.com/interviews/ceo-2025",
     "video_url": "https://youtube.com/watch?v=xxxxx",
     "video_file": "/media/broadcast_news/videos/interview.mp4",
     "status": "Published",
@@ -192,6 +196,10 @@ POST /api/cms/broadcast-news-management/
   "channel_name": {
     "en": "News Network",
     "ar": "شبكة الأخبار"
+  },
+  "publication_name": {
+    "en": "Business Weekly",
+    "ar": "بزنس ويكلي"
   },
   "interviewer_name": {
     "en": "John Smith"
@@ -404,8 +412,9 @@ fetch('/api/cms/broadcast-news-management/', {
 ## Models
 
 ### BroadcastNews
-- Multi-language fields: `title`, `channel_name`, `interviewer_name`, `interviewee_name`, `description`, `meta_title`, `meta_description`
+- Multi-language fields: `title`, `channel_name`, `publication_name`, `interviewer_name`, `interviewee_name`, `description`, `meta_title`, `meta_description`
 - Media: `thumbnail_image`, `video_url`, `video_file`
+- URLs: `video_url`, `article_url`
 - Status: `Draft` or `Published`
 - Auto-fields: `slug` (from title), `views_count` (auto-incremented)
 
