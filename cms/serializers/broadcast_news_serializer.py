@@ -39,6 +39,7 @@ class BroadcastNewsListSerializer(ModelSerializer):
     interviewer_name = TranslatedField()
     interviewee_name = TranslatedField()
     description = TranslatedField()
+    publication_name = TranslatedField()
 
     class Meta:
         model = BroadcastNews
@@ -47,6 +48,8 @@ class BroadcastNewsListSerializer(ModelSerializer):
             "title",
             "slug",
             "channel_name",
+            "publication_name",
+            "article_url",
             "interviewer_name",
             "interviewee_name",
             "interview_date",

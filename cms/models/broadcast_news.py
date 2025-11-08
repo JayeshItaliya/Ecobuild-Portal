@@ -46,6 +46,15 @@ class BroadcastNews(BaseTranslatableModel):
         null=True,
         help_text="URL to the video of the interview (YouTube, Vimeo, etc.)",
     )
+    article_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL to the original article or press mention",
+    )
+    publication_name = JSONField(
+        default=dict, help_text="Name of the publication/media outlet", blank=True
+    )
     video_file = models.FileField(
         upload_to="broadcast_news/videos/",
         blank=True,
