@@ -23,7 +23,6 @@ from cms.serializers.broadcast_news_serializer import BroadcastNewsListSerialize
 class BaseBroadcastNewsManagement(TranslatedResponseMixin):
     """Base class for Broadcast News Management with common configurations"""
 
-    queryset = BroadcastNews.objects.filter(deleted_at__isnull=True)
     pagination_class = CustomPagination
     filter_backends = [SearchFilter, OrderingFilter]
 
@@ -41,6 +40,9 @@ class BaseBroadcastNewsManagement(TranslatedResponseMixin):
         "display_order",
         "views_count",
     ]
+
+    def get_queryset(self):
+        return BroadcastNews.objects.filter(deleted_at__isnull=True)
 
 
 class BroadcastNewsManagementViewSet(BaseBroadcastNewsManagement, ModelViewSet):
@@ -60,7 +62,7 @@ class BroadcastNewsManagementViewSet(BaseBroadcastNewsManagement, ModelViewSet):
         return BroadcastNewsListSerializer
 
     def get_queryset(self):
-        queryset = super().queryset
+        queryset = super().get_queryset()
 
         # Filter by status if provided
         status_param = self.request.query_params.get("status", None)
@@ -153,7 +155,7 @@ class BroadcastNewsPublicListView(BaseBroadcastNewsManagement, ListAPIView):
     serializer_class = BroadcastNewsListSerializer
 
     def get_queryset(self):
-        queryset = super().queryset.filter(status="Published")
+        queryset = super().get_queryset().filter(status="Published")
         return queryset
 
     def get(self, request, *args, **kwargs):
