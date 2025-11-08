@@ -28,3 +28,24 @@ class TranslatedField(serializers.Field):
         if isinstance(value, dict):
             return value.get(lang_code) or value.get("en")
         return value
+
+    def to_internal_value(self, data):
+        """
+        Method to convert the incoming data to the internal representation.
+        Expects either:
+        1. A string (will be stored as {"en": string})
+        2. A dictionary with language codes as keys
+        """
+        if isinstance(data, str):
+            return {"en": data}
+        elif isinstance(data, dict):
+            # Validate the data structure
+            for key, value in data.items():
+                if not isinstance(key, str) or not isinstance(value, str):
+                    raise serializers.ValidationError(
+                        "Invalid translation format. Expected string values for language codes."
+                    )
+            return data
+        raise serializers.ValidationError(
+            "Invalid translation format. Expected string or dictionary."
+        )
