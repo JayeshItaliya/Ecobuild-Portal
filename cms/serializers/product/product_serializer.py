@@ -155,6 +155,83 @@ class ProductSerializer(ModelSerializer):
                 f"Error creating product with sections: {str(e)}"
             )
 
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+        Update Product with all related sections in one transaction.
+        Supports nested section updates with images, files, and gallery images.
+        """
+        try:
+            # Extract nested sections data
+            sections_data = validated_data.pop("sections", None)
+
+            # Update basic product fields
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            # Handle sections update if provided
+            if sections_data is not None:
+                # Delete existing sections not in the update data
+                existing_section_orders = {
+                    section.order: section for section in instance.sections.all()
+                }
+
+                # Track processed sections to know which ones to delete
+                processed_orders = set()
+
+                # Update or create sections
+                for index, section_data in enumerate(sections_data):
+                    # Extract gallery images if present
+                    gallery_images_data = section_data.pop("gallery_images", None)
+
+                    # Get order, defaulting to index + 1 if not provided
+                    order = section_data.get("order", index + 1)
+                    processed_orders.add(order)
+
+                    # Update existing section or create new one
+                    existing_section = existing_section_orders.get(order)
+
+                    if existing_section:
+                        # Update existing section
+                        for attr, value in section_data.items():
+                            setattr(existing_section, attr, value)
+                        existing_section.save()
+                        section = existing_section
+                    else:
+                        # Create new section
+                        section = ProductSection.objects.create(
+                            product=instance, order=order, **section_data
+                        )
+
+                    # Handle gallery images if provided
+                    if gallery_images_data is not None:
+                        # Clear existing gallery images for this section
+                        section.gallery_images.all().delete()
+
+                        # Create new gallery images
+                        for gallery_image_data in gallery_images_data:
+                            ProductGalleryImage.objects.create(
+                                section=section, **gallery_image_data
+                            )
+
+                # Delete sections that weren't in the update data
+                sections_to_delete = [
+                    section
+                    for order, section in existing_section_orders.items()
+                    if order not in processed_orders
+                ]
+                for section in sections_to_delete:
+                    section.delete()
+
+            return instance
+
+        except Exception as e:
+            # Transaction will be rolled back automatically
+            raise serializers.ValidationError(
+                f"Error updating product with sections: {str(e)}"
+            )
+
 
 class ProductResponseSerializer(ModelSerializer):
     title = TranslatedField()

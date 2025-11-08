@@ -306,11 +306,29 @@ class ProductRetrieveUpdateDestroyAPIView(
     def patch(self, request, *args, **kwargs):
         """Partially update a specific product."""
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+
+        # Parse form data if it's multipart/form-data
+        data = request.data
+        content_type = getattr(request, "content_type", "") or request.META.get(
+            "CONTENT_TYPE", ""
+        )
+
+        if "multipart/form-data" in content_type:
+            try:
+                data = parse_form_data_for_product(data)
+            except Exception as e:
+                logging.error(f"Error parsing form data: {e}")
+                return generic_response(
+                    message="Error parsing form data",
+                    data={"error": str(e)},
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = self.get_serializer(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
-        # Translate instance based on user's language preference (like about_us.py)
+        # Translate instance based on user's language preference
         lang_code = self.get_language_code(request)
         instance = self.translate_instance(instance, lang_code)
 
