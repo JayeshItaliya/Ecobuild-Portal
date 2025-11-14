@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from django.core.files.uploadedfile import UploadedFile
 from rest_framework import status
@@ -71,7 +72,8 @@ def parse_form_data_for_product(data):
             # Check if this is a file object
             if isinstance(value, (UploadedFile, bytes)) or hasattr(value, "read"):
                 # Check if this is a separate file upload with naming convention
-                if key.startswith("sections_"):
+                # Supports both underscore and bracket notation
+                if key.startswith("sections_") or key.startswith("sections["):
                     separate_files[key] = value
                 else:
                     parsed_data[key] = value
@@ -104,29 +106,73 @@ def _map_files_to_sections(parsed_data, separate_files):
     """
     Map separate file uploads to the sections array using naming convention.
 
-    Format: sections_{section_index}_{field_name}
-    Example: sections_0_content_image, sections_0_content_file
+    Supports both formats:
+    - Underscore format: sections_{section_index}_{field_name}
+      Example: sections_0_content_image, sections_0_content_file
+    - Bracket format: sections[{section_index}][{field_name}]
+      Example: sections[0][content_image], sections[1][content_image]
     """
     # Ensure sections array exists
     if "sections" not in parsed_data:
         parsed_data["sections"] = []
 
     for key, file_value in separate_files.items():
-        parts = key.split("_")
-        if len(parts) >= 3 and parts[0] == "sections":
-            try:
-                section_index = int(parts[1])
-                field_name = "_".join(parts[2:])
+        section_index = None
+        field_name = None
+        is_gallery = False
+        gallery_index = None
+        gallery_field = None
 
+        # Try bracket notation first: sections[0][content_image] or sections[0][gallery_images][0][image]
+        if key.startswith("sections[") and "]" in key:
+            try:
+                # Match sections[index][field] or sections[index][gallery_images][gallery_index][field]
+                # Pattern 1: sections[0][gallery_images][0][image]
+                gallery_pattern = r'sections\[(\d+)\]\[gallery_images\]\[(\d+)\]\[([^\]]+)\]'
+                gallery_match = re.match(gallery_pattern, key)
+                if gallery_match:
+                    section_index = int(gallery_match.group(1))
+                    gallery_index = int(gallery_match.group(2))
+                    gallery_field = gallery_match.group(3)
+                    is_gallery = True
+                else:
+                    # Pattern 2: sections[0][content_image] or sections[0][content_file]
+                    simple_pattern = r'sections\[(\d+)\]\[([^\]]+)\]'
+                    simple_match = re.match(simple_pattern, key)
+                    if simple_match:
+                        section_index = int(simple_match.group(1))
+                        field_name = simple_match.group(2)
+            except (ValueError, IndexError, AttributeError) as e:
+                logging.warning(f"Could not parse bracket notation for field {key}: {e}")
+                # Fall through to try underscore notation
+
+        # Try underscore notation: sections_0_content_image
+        if section_index is None:
+            parts = key.split("_")
+            if len(parts) >= 3 and parts[0] == "sections":
+                try:
+                    section_index = int(parts[1])
+                    field_name = "_".join(parts[2:])
+
+                    # Handle gallery images: sections_0_gallery_images_0_image
+                    if "gallery_images" in field_name and len(parts) >= 5:
+                        is_gallery = True
+                        gallery_index = int(parts[3])
+                        gallery_field = parts[4]  # 'image' or 'caption'
+                        field_name = None  # Clear field_name since it's a gallery image
+                except (ValueError, IndexError) as e:
+                    logging.warning(f"Could not parse underscore notation for field {key}: {e}")
+                    continue
+
+        # Process the file if we successfully parsed the key
+        if section_index is not None:
+            try:
                 # Ensure we have enough sections in the list
                 while len(parsed_data["sections"]) <= section_index:
                     parsed_data["sections"].append({})
 
-                # Handle gallery images: sections_0_gallery_images_0_image
-                if "gallery_images" in field_name and len(parts) >= 5:
-                    gallery_index = int(parts[3])
-                    gallery_field = parts[4]  # 'image' or 'caption'
-
+                if is_gallery and gallery_index is not None and gallery_field:
+                    # Handle gallery images
                     if "gallery_images" not in parsed_data["sections"][section_index]:
                         parsed_data["sections"][section_index]["gallery_images"] = []
 
@@ -141,11 +187,11 @@ def _map_files_to_sections(parsed_data, separate_files):
                     parsed_data["sections"][section_index]["gallery_images"][
                         gallery_index
                     ][gallery_field] = file_value
-                else:
+                elif field_name:
                     # Regular section field (content_image, content_file, etc.)
                     parsed_data["sections"][section_index][field_name] = file_value
             except (ValueError, IndexError) as e:
-                logging.warning(f"Could not parse file field {key}: {e}")
+                logging.warning(f"Could not map file field {key} to sections: {e}")
                 continue
 
     return parsed_data

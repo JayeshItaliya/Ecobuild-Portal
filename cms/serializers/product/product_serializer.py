@@ -172,16 +172,24 @@ class ProductSerializer(ModelSerializer):
 
             # Handle sections update if provided
             if sections_data is not None:
-                # Delete existing sections not in the update data
-                existing_section_orders = {
+                # Create mappings for existing sections by ID and order
+                existing_sections_by_id = {
+                    str(section.id): section for section in instance.sections.all()
+                }
+                existing_sections_by_order = {
                     section.order: section for section in instance.sections.all()
                 }
 
                 # Track processed sections to know which ones to delete
+                processed_section_ids = set()
                 processed_orders = set()
 
                 # Update or create sections
                 for index, section_data in enumerate(sections_data):
+                    # Extract fields that shouldn't be set directly
+                    section_id = section_data.pop("id", None)
+                    section_data.pop("product", None)  # Remove nested product object
+                    
                     # Extract gallery images if present
                     gallery_images_data = section_data.pop("gallery_images", None)
 
@@ -189,13 +197,25 @@ class ProductSerializer(ModelSerializer):
                     order = section_data.get("order", index + 1)
                     processed_orders.add(order)
 
-                    # Update existing section or create new one
-                    existing_section = existing_section_orders.get(order)
+                    # Try to find existing section by ID first, then by order
+                    existing_section = None
+                    if section_id:
+                        existing_section = existing_sections_by_id.get(str(section_id))
+                        if existing_section:
+                            processed_section_ids.add(str(existing_section.id))
+                    
+                    if not existing_section:
+                        # Fall back to matching by order
+                        existing_section = existing_sections_by_order.get(order)
+                        if existing_section:
+                            processed_section_ids.add(str(existing_section.id))
 
                     if existing_section:
                         # Update existing section
                         for attr, value in section_data.items():
-                            setattr(existing_section, attr, value)
+                            # Skip id and other read-only fields
+                            if attr not in ["id", "product"]:
+                                setattr(existing_section, attr, value)
                         existing_section.save()
                         section = existing_section
                     else:
@@ -216,10 +236,11 @@ class ProductSerializer(ModelSerializer):
                             )
 
                 # Delete sections that weren't in the update data
+                all_existing_sections = set(existing_sections_by_id.values())
                 sections_to_delete = [
                     section
-                    for order, section in existing_section_orders.items()
-                    if order not in processed_orders
+                    for section in all_existing_sections
+                    if str(section.id) not in processed_section_ids
                 ]
                 for section in sections_to_delete:
                     section.delete()
