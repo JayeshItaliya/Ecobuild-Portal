@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.serializers.register import ValidateTokenAPIView
 from accounts.views.account.account_views import LogoutAPIView
 from accounts.views.account.account_views import SigninView
+
 # from accounts.views.account.facebook import FacebookLogin
 from accounts.views.account.google_auth import GoogleLoginView
 from accounts.views.account.password_view import ChangePasswordAPIView
@@ -12,6 +13,11 @@ from accounts.views.account.password_view import PasswordResetConfirmAPIView
 from accounts.views.account.registration_views import SignupView
 from accounts.views.company_info import CompanyInfoCreateAPIView
 from accounts.views.company_info import CompanyInfoRetrieveUpdateAPIView
+from accounts.views.user.permission_views import PermissionByResourceTypeAPIView
+from accounts.views.user.permission_views import PermissionListCreateAPIView
+from accounts.views.user.permission_views import PermissionRetrieveUpdateDestroyAPIView
+from accounts.views.user.permission_views import RolePermissionBulkUpdateAPIView
+from accounts.views.user.permission_views import RolePermissionListAPIView
 from accounts.views.user.team_members import TeamMemberListAPIView
 from accounts.views.user.user_role import RoleListCreateAPIView
 from accounts.views.user.user_role import RoleRetrieveUpdateDestroyAPIView
@@ -67,5 +73,31 @@ urlpatterns = [
         "user-activity/",
         UserActivityLogListAPIView.as_view(),
         name="user-activity",
+    ),
+    # Permission Management URLs
+    path(
+        "permissions/",
+        PermissionListCreateAPIView.as_view(),
+        name="permission-list-create",
+    ),
+    path(
+        "permissions/<str:pk>/",
+        PermissionRetrieveUpdateDestroyAPIView.as_view(),
+        name="permission-detail",
+    ),
+    path(
+        "permissions/by-resource-type/",
+        PermissionByResourceTypeAPIView.as_view(),
+        name="permission-by-resource-type",
+    ),
+    path(
+        "role/<int:role_id>/permissions/",
+        RolePermissionListAPIView.as_view(),
+        name="role-permission-list",
+    ),
+    path(
+        "role/permissions/bulk-update/",
+        RolePermissionBulkUpdateAPIView.as_view(),
+        name="role-permission-bulk-update",
     ),
 ]

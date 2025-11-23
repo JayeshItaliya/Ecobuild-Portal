@@ -1,8 +1,12 @@
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.db.models import JSONField
+from django.utils import timezone
 
+from accounts.enums import PermissionResourceChoices
 from accounts.enums import PlatformChoices
+from accounts.enums import SubscriptionTypeChoices
+from accounts.manager import CustomUserManager
 from backend.enums import ActionType
 from backend.enums import LoginMethodChoices
 from backend.enums import UserTypeChoices
@@ -96,8 +100,21 @@ class User(AbstractBaseUser, BaseModel):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    # Subscription information
+    subscription_type = models.CharField(
+        max_length=20,
+        choices=SubscriptionTypeChoices.choices,
+        default=SubscriptionTypeChoices.FREE,
+        help_text="User's current subscription level",
+    )
+    subscription_expires_at = models.DateTimeField(
+        null=True, blank=True, help_text="When the subscription expires"
+    )
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
 
     TRANSLATABLE_FIELDS = ["full_name"]
 
@@ -108,7 +125,86 @@ class User(AbstractBaseUser, BaseModel):
         return self.is_staff
 
     def has_perm(self, perm, obj=None):
-        return self.is_superuser
+        """
+        Check if user has a specific permission.
+        First checks superuser status, then role-based permissions.
+        """
+        if self.is_superuser:
+            return True
+
+        if not self.is_active:
+            return False
+
+        # Check role-based permissions
+        return self.has_permission(perm)
+
+    def has_permission(self, permission_codename):
+        """Check if user has a specific permission through their role"""
+        if not self.role or not self.role.is_active:
+            return False
+
+        # Check if role has the permission
+        try:
+            role_permission = RolePermission.objects.select_related("permission").get(
+                role=self.role, permission__codename=permission_codename
+            )
+
+            # Check if permission is granted
+            if not role_permission.is_granted:
+                return False
+
+            # Check subscription level if specified
+            required_sub = (
+                role_permission.subscription_level or self.role.subscription_required
+            )
+            return self._check_subscription_level(required_sub)
+
+        except RolePermission.DoesNotExist:
+            return False
+
+    def has_permission_for_resource(self, resource_type, action):
+        """Check if user has permission for a specific resource and action"""
+        permission_codename = f"{action.lower()}_{resource_type.lower()}"
+        return self.has_permission(permission_codename)
+
+    def _check_subscription_level(self, required_level):
+        """Check if user's subscription meets the required level"""
+        subscription_levels = {
+            SubscriptionTypeChoices.FREE: 0,
+            SubscriptionTypeChoices.BASIC: 1,
+            SubscriptionTypeChoices.PREMIUM: 2,
+            SubscriptionTypeChoices.ENTERPRISE: 3,
+        }
+
+        user_level = subscription_levels.get(self.subscription_type, 0)
+        required_level_value = subscription_levels.get(required_level, 0)
+
+        # Check if subscription has expired
+        if (
+            self.subscription_expires_at
+            and self.subscription_expires_at < timezone.now()
+        ):
+            return required_level_value == 0  # Only allow free content if expired
+
+        return user_level >= required_level_value
+
+    def get_all_permissions(self):
+        """Get all permissions for this user"""
+        if not self.role or not self.role.is_active:
+            return []
+
+        permissions = []
+        role_permissions = RolePermission.objects.select_related("permission").filter(
+            role=self.role, is_granted=True
+        )
+
+        for rp in role_permissions:
+            if self._check_subscription_level(
+                rp.subscription_level or self.role.subscription_required
+            ):
+                permissions.append(rp.permission.codename)
+
+        return permissions
 
     class Meta:
         db_table = "user"
@@ -119,6 +215,18 @@ class User(AbstractBaseUser, BaseModel):
 class Role(BaseTranslatableModel):
     name = JSONField(default=dict)
     description = JSONField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_system_role = models.BooleanField(
+        default=False, help_text="System roles cannot be deleted"
+    )
+
+    # Subscription requirements for this role
+    subscription_required = models.CharField(
+        max_length=20,
+        choices=SubscriptionTypeChoices.choices,
+        default=SubscriptionTypeChoices.FREE,
+        help_text="Minimum subscription level required for this role",
+    )
 
     TRANSLATABLE_FIELDS = ["name", "description"]
 
@@ -129,6 +237,89 @@ class Role(BaseTranslatableModel):
         db_table = "roles"
         verbose_name = "Role"
         verbose_name_plural = "Roles"
+
+
+class Permission(BaseModel):
+    """Model to define granular permissions for different resources"""
+
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Unique permission name (e.g., 'view_product', 'edit_blog')",
+    )
+    codename = models.CharField(
+        max_length=100, unique=True, help_text="Permission codename for API usage"
+    )
+    resource_type = models.CharField(
+        max_length=50,
+        choices=PermissionResourceChoices.choices,
+        help_text="Type of resource this permission applies to",
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=ActionType.choices,
+        help_text="Action that can be performed",
+    )
+    description = models.TextField(
+        blank=True, null=True, help_text="Description of what this permission allows"
+    )
+    is_active = models.BooleanField(default=True)
+
+    # API endpoint information for dynamic permission checking
+    api_endpoint = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="API endpoint pattern this permission protects",
+    )
+    http_methods = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of HTTP methods this permission applies to",
+    )
+
+    def __str__(self):
+        return f"{self.action.title()} {self.resource_type.replace('_', ' ').title()}"
+
+    class Meta:
+        db_table = "custom_permissions"
+        verbose_name = "Permission"
+        verbose_name_plural = "Permissions"
+        unique_together = ("resource_type", "action", "codename")
+
+
+class RolePermission(BaseModel):
+    """Model to link roles with permissions"""
+
+    role = models.ForeignKey(
+        Role, on_delete=models.CASCADE, related_name="role_permissions"
+    )
+    permission = models.ForeignKey(
+        Permission, on_delete=models.CASCADE, related_name="permission_roles"
+    )
+    is_granted = models.BooleanField(
+        default=True,
+        help_text="Whether this permission is granted (True) or explicitly denied (False)",
+    )
+
+    # Optional constraints
+    subscription_level = models.CharField(
+        max_length=20,
+        choices=SubscriptionTypeChoices.choices,
+        blank=True,
+        null=True,
+        help_text="Required subscription level for this permission (overrides role default)",
+    )
+
+    def __str__(self):
+        status = "Granted" if self.is_granted else "Denied"
+        return f"{self.role} - {self.permission} ({status})"
+
+    class Meta:
+        db_table = "role_permissions"
+        verbose_name = "Role Permission"
+        verbose_name_plural = "Role Permissions"
+        unique_together = ("role", "permission")
 
 
 class ActivityLog(BaseTranslatableModel):

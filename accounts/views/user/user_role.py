@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from accounts.mixins import TranslatedResponseMixin
 from accounts.models import Role
+from accounts.permissions import CanManageRoles
 from accounts.serializers.user_role import RoleResponseSerializer
 from accounts.serializers.user_role import RoleSerializer
 from backend.utils import CustomPagination
@@ -18,7 +19,7 @@ class BaseRoleAPIView(TranslatedResponseMixin):
     serializer_class = RoleSerializer
     pagination_class = CustomPagination
     response_serializer_class = RoleResponseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanManageRoles]
 
 
 class RoleListCreateAPIView(BaseRoleAPIView, ListCreateAPIView):
