@@ -189,12 +189,12 @@ class ProductSerializer(ModelSerializer):
                     # Extract fields that shouldn't be set directly
                     section_id = section_data.pop("id", None)
                     section_data.pop("product", None)  # Remove nested product object
-                    
+
                     # Extract gallery images if present
                     gallery_images_data = section_data.pop("gallery_images", None)
 
                     # Get order, defaulting to index + 1 if not provided
-                    order = section_data.get("order", index + 1)
+                    order = section_data.pop("order", index + 1)
                     processed_orders.add(order)
 
                     # Try to find existing section by ID first, then by order
@@ -203,7 +203,7 @@ class ProductSerializer(ModelSerializer):
                         existing_section = existing_sections_by_id.get(str(section_id))
                         if existing_section:
                             processed_section_ids.add(str(existing_section.id))
-                    
+
                     if not existing_section:
                         # Fall back to matching by order
                         existing_section = existing_sections_by_order.get(order)
@@ -211,6 +211,7 @@ class ProductSerializer(ModelSerializer):
                             processed_section_ids.add(str(existing_section.id))
 
                     if existing_section:
+                        existing_section.order = order
                         # Update existing section
                         for attr, value in section_data.items():
                             # Skip id and other read-only fields
