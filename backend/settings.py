@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 SECRET_KEY = os.getenv("SECRET_KEY", "qwertyuiop1234asdfghjk56789xcvbnjmk")
 DEBUG = int(os.getenv("DEBUG", 1))
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = ['*']
 
 # Custom User
 AUTH_USER_MODEL = "accounts.User"
