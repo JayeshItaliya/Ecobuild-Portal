@@ -15,8 +15,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 SECRET_KEY = os.getenv("SECRET_KEY", "qwertyuiop1234asdfghjk56789xcvbnjmk")
 DEBUG = int(os.getenv("DEBUG", 1))
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = [
+    "ecobuild.vrajtechnosys.in",
+    "127.0.0.1",
+]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Custom User
 AUTH_USER_MODEL = "accounts.User"
 
@@ -93,15 +96,11 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",
 ]
 
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = [
-        origin.strip()
-        for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
-        if origin.strip()
-    ]
+# CORS
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://ecobuild-fe.vercel.app",
+]
 
 # Always set CSRF trusted origins (production requires it)
 CSRF_TRUSTED_ORIGINS = [
