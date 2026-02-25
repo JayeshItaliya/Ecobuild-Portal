@@ -17,6 +17,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "qwertyuiop1234asdfghjk56789xcvbnjmk")
 DEBUG = int(os.getenv("DEBUG", 1))
 ALLOWED_HOSTS = [
     "ecobuild.vrajtechnosys.in",
+    "https://ecobuild-fe.vercel.app",
     "127.0.0.1",
 ]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
