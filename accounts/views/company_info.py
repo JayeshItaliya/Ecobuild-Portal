@@ -21,7 +21,7 @@ def parse_company_info_payload(data):
     - social_links[index][field] notation in form-data
     - translatable JSON fields as JSON strings
     """
-    if not isinstance(data, dict):
+    if not hasattr(data, "items"):
         return data
 
     parsed_data = {}

@@ -1,11 +1,13 @@
 from django.db import transaction
 from rest_framework import serializers
 
+from accounts.enums import PlatformChoices
 from accounts.models import CompanyInfo
 from accounts.models import SocialLink
 
 
 class SocialLinkSerializer(serializers.ModelSerializer):
+    platform = serializers.CharField()
     id = serializers.IntegerField(
         required=False
     )  # for future use if we want id-based updates
@@ -13,6 +15,16 @@ class SocialLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialLink
         fields = ["id", "platform", "url", "icon", "is_active"]
+
+    def validate_platform(self, value):
+        if not isinstance(value, str):
+            raise serializers.ValidationError("Platform must be a string.")
+
+        normalized = value.strip().strip('"').strip("'")
+        for choice in PlatformChoices.values:
+            if normalized.lower() == choice.lower():
+                return choice
+        raise serializers.ValidationError(f'"{normalized}" is not a valid choice.')
 
 
 class CompanyInfoSerializer(serializers.ModelSerializer):
