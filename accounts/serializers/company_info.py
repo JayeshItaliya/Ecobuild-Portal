@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from accounts.models import CompanyInfo
@@ -49,15 +50,18 @@ class CompanyInfoSerializer(serializers.ModelSerializer):
 
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         social_links_data = validated_data.pop("social_links", [])
         company_info = CompanyInfo.objects.create(**validated_data)
 
         for link_data in social_links_data:
+            link_data.pop("id", None)
             SocialLink.objects.create(company=company_info, **link_data)
 
         return company_info
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         social_links_data = validated_data.pop("social_links", None)
 
@@ -66,9 +70,27 @@ class CompanyInfoSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
 
-        if social_links_data is not None:  # update only if passed
-            instance.social_links.all().delete()
+        if social_links_data is not None:
+            existing_links = {
+                str(link.id): link for link in instance.social_links.all()
+            }
+            processed_ids = set()
+
             for link_data in social_links_data:
-                SocialLink.objects.create(company=instance, **link_data)
+                link_id = link_data.pop("id", None)
+
+                if link_id and str(link_id) in existing_links:
+                    social_link = existing_links[str(link_id)]
+                    for attr, value in link_data.items():
+                        setattr(social_link, attr, value)
+                    social_link.save()
+                    processed_ids.add(str(social_link.id))
+                else:
+                    new_link = SocialLink.objects.create(company=instance, **link_data)
+                    processed_ids.add(str(new_link.id))
+
+            stale_ids = set(existing_links.keys()) - processed_ids
+            if stale_ids:
+                instance.social_links.filter(id__in=stale_ids).delete()
 
         return instance

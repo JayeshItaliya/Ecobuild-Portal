@@ -1,3 +1,6 @@
+import json
+import re
+
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
@@ -7,6 +10,52 @@ from accounts.mixins import TranslatedResponseMixin
 from accounts.models import CompanyInfo
 from accounts.serializers.company_info import CompanyInfoSerializer
 from backend.utils import generic_response
+
+
+def parse_company_info_payload(data):
+    """
+    Parse CompanyInfo payload for JSON and multipart/form-data requests.
+
+    Supports:
+    - social_links as JSON string
+    - social_links[index][field] notation in form-data
+    - translatable JSON fields as JSON strings
+    """
+    if not isinstance(data, dict):
+        return data
+
+    parsed_data = {}
+    bracket_social_links = {}
+    json_fields = {"name", "address", "description", "social_links"}
+
+    for key, value in data.items():
+        if isinstance(key, str):
+            match = re.match(r"social_links\[(\d+)\]\[([^\]]+)\]", key)
+            if match:
+                link_index = int(match.group(1))
+                link_field = match.group(2)
+                bracket_social_links.setdefault(link_index, {})[link_field] = value
+                continue
+
+        if (
+            isinstance(key, str)
+            and key in json_fields
+            and isinstance(value, str)
+            and value.strip().startswith(("{", "["))
+        ):
+            try:
+                parsed_data[key] = json.loads(value)
+            except json.JSONDecodeError:
+                parsed_data[key] = value
+        else:
+            parsed_data[key] = value
+
+    if bracket_social_links and "social_links" not in parsed_data:
+        parsed_data["social_links"] = [
+            bracket_social_links[index] for index in sorted(bracket_social_links.keys())
+        ]
+
+    return parsed_data
 
 
 class BaseCompanyInfoAPIView(TranslatedResponseMixin):
@@ -26,7 +75,8 @@ class CompanyInfoCreateAPIView(BaseCompanyInfoAPIView, ListCreateAPIView):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error_message="Company info already exists. You can update the record if changes are needed.",
             )
-        serializer = self.get_serializer(data=request.data)
+        payload = parse_company_info_payload(request.data)
+        serializer = self.get_serializer(data=payload)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         response_data = self.get_serializer(instance).data
@@ -64,7 +114,8 @@ class CompanyInfoRetrieveUpdateAPIView(
     def patch(self, request, *args, **kwargs):
         """Update the company info record."""
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        payload = parse_company_info_payload(request.data)
+        serializer = self.get_serializer(instance, data=payload, partial=True)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(updated_by=request.user)
         response_data = self.get_serializer(instance).data
