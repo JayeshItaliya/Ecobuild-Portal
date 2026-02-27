@@ -1,3 +1,5 @@
+import json
+
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -8,15 +10,39 @@ from cms.models.blog import Tag
 
 
 class TagResponseSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["name"] = parse_json_string(data.get("name"))
+        return data
+
     class Meta:
         model = Tag
         fields = ["id", "name", "slug"]
 
 
 class CategoryResponseSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["name"] = parse_json_string(data.get("name"))
+        return data
+
     class Meta:
         model = Category
         fields = ["id", "name", "slug"]
+
+
+def parse_json_string(value):
+    if not isinstance(value, str):
+        return value
+
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        return value
+
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return value
 
 
 class BlogManagementSerializer(ModelSerializer):
@@ -96,14 +122,21 @@ class BlogManagementSerializer(ModelSerializer):
         return instance
 
     def get_tags(self, obj):
-        return list(obj.tags.values_list("name", flat=True))
+        return [
+            parse_json_string(tag_name)
+            for tag_name in obj.tags.values_list("name", flat=True)
+        ]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data["title"] = parse_json_string(data.get("title"))
+        data["content"] = parse_json_string(data.get("content"))
+        data["meta_title"] = parse_json_string(data.get("meta_title"))
+        data["meta_description"] = parse_json_string(data.get("meta_description"))
 
         # Properly serialize category name
         if instance.category:
-            data["category"] = instance.category.name
+            data["category"] = parse_json_string(instance.category.name)
         else:
             data["category"] = None
 
@@ -116,6 +149,14 @@ class BlogManagementSerializer(ModelSerializer):
 class BlogResponseSerializer(ModelSerializer):
     category = CategoryResponseSerializer()
     tags = TagResponseSerializer(many=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["title"] = parse_json_string(data.get("title"))
+        data["content"] = parse_json_string(data.get("content"))
+        data["meta_title"] = parse_json_string(data.get("meta_title"))
+        data["meta_description"] = parse_json_string(data.get("meta_description"))
+        return data
 
     class Meta:
         model = BlogPost
