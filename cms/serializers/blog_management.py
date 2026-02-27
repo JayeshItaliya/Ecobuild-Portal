@@ -1,3 +1,5 @@
+import json
+
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -8,15 +10,59 @@ from cms.models.blog import Tag
 
 
 class TagResponseSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        lang_code = get_language_code(self.context)
+        data["name"] = get_translated_value(data.get("name"), lang_code)
+        return data
+
     class Meta:
         model = Tag
         fields = ["id", "name", "slug"]
 
 
 class CategoryResponseSerializer(ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        lang_code = get_language_code(self.context)
+        data["name"] = get_translated_value(data.get("name"), lang_code)
+        return data
+
     class Meta:
         model = Category
         fields = ["id", "name", "slug"]
+
+
+def parse_json_string(value):
+    if not isinstance(value, str):
+        return value
+
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        return value
+
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return value
+
+
+def get_language_code(context):
+    request = context.get("request") if context else None
+    if request:
+        return request.headers.get("Accept-Language", "en").lower()
+    return "en"
+
+
+def get_translated_value(value, lang_code):
+    parsed_value = parse_json_string(value)
+    if isinstance(parsed_value, dict):
+        return (
+            parsed_value.get(lang_code)
+            or parsed_value.get("en")
+            or next(iter(parsed_value.values()), "")
+        )
+    return parsed_value
 
 
 class BlogManagementSerializer(ModelSerializer):
@@ -96,14 +142,25 @@ class BlogManagementSerializer(ModelSerializer):
         return instance
 
     def get_tags(self, obj):
-        return list(obj.tags.values_list("name", flat=True))
+        lang_code = get_language_code(self.context)
+        return [
+            get_translated_value(tag_name, lang_code)
+            for tag_name in obj.tags.values_list("name", flat=True)
+        ]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        lang_code = get_language_code(self.context)
+        data["title"] = get_translated_value(data.get("title"), lang_code)
+        data["content"] = get_translated_value(data.get("content"), lang_code)
+        data["meta_title"] = get_translated_value(data.get("meta_title"), lang_code)
+        data["meta_description"] = get_translated_value(
+            data.get("meta_description"), lang_code
+        )
 
         # Properly serialize category name
         if instance.category:
-            data["category"] = instance.category.name
+            data["category"] = get_translated_value(instance.category.name, lang_code)
         else:
             data["category"] = None
 
@@ -116,6 +173,17 @@ class BlogManagementSerializer(ModelSerializer):
 class BlogResponseSerializer(ModelSerializer):
     category = CategoryResponseSerializer()
     tags = TagResponseSerializer(many=True)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        lang_code = get_language_code(self.context)
+        data["title"] = get_translated_value(data.get("title"), lang_code)
+        data["content"] = get_translated_value(data.get("content"), lang_code)
+        data["meta_title"] = get_translated_value(data.get("meta_title"), lang_code)
+        data["meta_description"] = get_translated_value(
+            data.get("meta_description"), lang_code
+        )
+        return data
 
     class Meta:
         model = BlogPost
