@@ -56,7 +56,9 @@ class BlogManagementListCreateAPIView(BaseBlogManagement, ListCreateAPIView):
         )
         serializer.is_valid(raise_exception=True)
         blog_post = serializer.save()
-        response_data = self.response_serializer_class(blog_post).data
+        response_data = self.response_serializer_class(
+            blog_post, context={"request": request}
+        ).data
         return generic_response(
             status_code=status.HTTP_201_CREATED,
             message="Blog created successfully.",
@@ -73,7 +75,9 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
 
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
-        response_data = self.response_serializer_class(instance).data
+        response_data = self.response_serializer_class(
+            instance, context={"request": request}
+        ).data
         return generic_response(
             status_code=status.HTTP_200_OK,
             message="Blog fetched successfully",
@@ -87,7 +91,9 @@ class BlogManagementRetrieveUpdateDestroyAPIView(
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        response_data = self.response_serializer_class(instance).data
+        response_data = self.response_serializer_class(
+            instance, context={"request": request}
+        ).data
         return generic_response(
             status_code=status.HTTP_200_OK,
             message="Blog updated successfully.",
